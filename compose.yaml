@@ -1,0 +1,25 @@
+services:
+  anyshare:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: apuer/anyshare:1.0
+    container_name: anyshare
+    restart: unless-stopped
+    ports:
+      - 80:80
+    networks:
+      - helloworld
+    environment:
+      - ADMIN_USERNAME=admin
+      - ADMIN_PASSWORD=123456
+      - ANONYMOUS=true
+      - FILE_LIMIT_SIZE=10.00
+    volumes:
+      - ./log:/app/log
+      - ./upload:/app/upload
+      - /etc/localtime:/etc/localtime:ro
+networks:
+  helloworld:
+    external: true
+    name: play

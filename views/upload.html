@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>anyShare - File uploaded</title>
+    <link rel="icon" type="image/svg+xml" href="/static/image/anyshare.svg">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+    <header>
+        <div class="container">
+            <h1>anyShare</h1>
+            <div class="header-buttons">
+                <a href="/" class="nav-link">
+                    <span aria-hidden="true" class="matsym">upload_file</span>
+                    <span>Upload</span>
+                </a>
+                <a href="/admin" class="nav-link">
+                    <span aria-hidden="true" class="matsym">manage_accounts</span>
+                    <span>Admin</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="success-container">
+            <div class="link-box">
+                <h2>
+                    <span class="matsym" aria-hidden="true">lock</span>
+                    <span>File Access Password</span>
+                </h2>
+
+                <div class="password-display">
+                    <p>File Access Password: <strong>{{file_info['password']}}</strong></p>
+                    <p class="password-note">Please save this password and it will be used to access your files</p>
+                </div>
+            </div>
+
+            <div class="link-box">
+                <h2>
+                    <span aria-hidden="true" class="matsym">public</span>
+                    <span>Public download link</span>
+                </h2>
+
+                <div class="link-field">
+                    <input type="text" readonly id="public-link" value="/file?hash={{file_info['file_hash']}}">
+
+                    <div class="link-actions">
+                        <a href="/file?hash={{file_info['file_hash']}}" class="btn btn-action">
+                            <span aria-hidden="true" class="matsym">open_in_new</span>
+                            <span>Open</span>
+                        </a>
+
+                        <button class="btn btn-action copy-btn" id="copy-public-btn">
+                            <span aria-hidden="true" class="matsym">content_paste</span>
+                            <span>Copy to clipboard</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="link-box">
+                <h2>
+                    <span aria-hidden="true" class="matsym">security</span>
+                    <span>Owner download link</span>
+                </h2>
+
+                <div class="link-field">
+                    <input type="text" readonly id="protected-link" value="/file?hash={{file_info['file_hash']}}&pwd={{file_info['password']}}">
+
+                    <div class="link-actions">
+                        <a href="/file?hash={{file_info['file_hash']}}&pwd={{file_info['password']}}" class="btn btn-action">
+                            <span aria-hidden="true" class="matsym">open_in_new</span>
+                            <span>Open</span>
+                        </a>
+
+                        <button class="btn btn-action copy-btn" id="copy-protected-btn">
+                            <span aria-hidden="true" class="matsym">content_paste</span>
+                            <span>Copy to clipboard</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="/static/js/main.js"></script>
+</body>
+
+</html>

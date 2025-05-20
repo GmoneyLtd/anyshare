@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>anyShare - Admin Login</title>
+    <link rel="icon" type="image/svg+xml" href="/static/image/anyshare.svg">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+    <header>
+        <div class="container">
+            <h1>anyShare</h1>
+            <div class="header-buttons">
+                <a href="/" class="nav-link">
+                    <span aria-hidden="true" class="matsym">upload_file</span>
+                    <span>Upload</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="upload-container">
+            <div class="upload-box">
+                <h2>
+                    <span class="matsym big" aria-hidden="true">manage_accounts</span>
+                    Admin Login
+                </h2>
+
+                % if error:
+                <div class="error-message">
+                    <p>{{ error }}</p>
+                </div>
+                % end
+
+                <form action="/login" method="post" class="login-form">
+                    <div class="form-group">
+                        <label for="username">User</label>
+                        <input type="text" id="username" name="username" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-upload">Login</button>
+                </form>
+            </div>
+        </div>
+    </main>
+</body>
+
+</html>

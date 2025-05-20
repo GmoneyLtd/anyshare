@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>anyShare</title>
+    <link rel="icon" type="image/svg+xml" href="/static/image/anyshare.svg">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+    <header>
+        <div class="container">
+            <h1>anyShare</h1>
+            <div class="header-buttons">
+                <a href="/" class="nav-link">
+                    <span aria-hidden="true" class="matsym">upload_file</span>
+                    <span>Upload</span>
+                </a>
+                <a href="/admin" class="nav-link">
+                    <span aria-hidden="true" class="matsym">manage_accounts</span>
+                    <span>Admin</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="upload-container">
+            <div class="upload-box">
+                <h2>
+                    <span class="matsym big" aria-hidden="true">upload_file</span>
+                    <span>Upload new file</span>
+                </h2>
+
+                <div class="upload-info">
+                    <div class="info-item">
+                        <span class="matsym" aria-hidden="true">clock_loader_90</span>
+                        <span>Files up to {{file_limit_size}} MiB supported</span>
+                    </div>
+
+                    <div class="info-item">
+                        <span class="matsym" aria-hidden="true">lock</span>
+                        <span> File and filename are encrypted in your browser after being sent over the network </span>
+                    </div>
+
+                    <div class="info-item">
+                        <span class="matsym" aria-hidden="true">visibility_off</span>
+                        <span> The server can view or decrypt your data </span>
+                    </div>
+
+                    <div class="info-item">
+                        <span class="matsym" aria-hidden="true">key</span>
+                        <span>The decryption key is stored in the download link's</span>
+                    </div>
+                </div>
+
+                <div class="file-select">
+                    <button id="selectFileBtn" class="btn btn-select">
+                        <span aria-hidden="true" class="matsym">folder_open</span>
+                        <span>Select a File</span>
+                    </button>
+                    <input type="file" id="fileInput" style="display: none;">
+                    <p class="drag-drop-text">You can also drag and drop files onto this page</p>
+                </div>
+
+                <div id="uploadForm" style="display: none;">
+                    <div class="file-info">
+                        <div class="info-row">
+                            <span class="matsym" aria-hidden="true">draft</span>
+                            <div class="info-content">
+                                <span class="label">Filename</span>
+                                <span id="fileName" class="value"></span>
+                            </div>
+                        </div>
+
+                        <div class="info-row">
+                            <span class="matsym" aria-hidden="true">clock_loader_90</span>
+                            <div class="info-content">
+                                <span class="label">Size</span>
+                                <span id="fileSize" class="value"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="expiry-options">
+                        <p>Expires in</p>
+                        <div class="option-buttons">
+                            <label class="option">
+                                <input type="radio" name="expiry" value="1 hour">
+                                <span class="option-text">1 hour</span>
+                            </label>
+
+                            <label class="option">
+                                <input type="radio" name="expiry" value="1 day" checked>
+                                <span class="option-text">1 day</span>
+                            </label>
+
+                            <label class="option">
+                                <input type="radio" name="expiry" value="1 week">
+                                <span class="option-text">1 week</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <button id="uploadBtn" class="btn btn-upload">
+                        <span aria-hidden="true" class="matsym">upload_file</span>
+                        <span> Encrypt and Upload </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="/static/js/main.js"></script>
+</body>
+
+</html>
