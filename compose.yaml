@@ -13,7 +13,7 @@ services:
     environment:
       - ADMIN_USERNAME=admin
       - ADMIN_PASSWORD=123456
-      - ANONYMOUS=true
+      - ANONYMOUS=false
       - FILE_LIMIT_SIZE=10.00
     volumes:
       - ./log:/app/log

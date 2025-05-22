@@ -2,7 +2,8 @@
 .DS_Store
 .AppleDouble
 .LSOverride
-Icon[]
+Icon[
+]
 
 # Thumbnails
 ._*
@@ -205,3 +206,8 @@ cython_debug/
 .cursorignore
 .cursorindexingignore.vscode/
 .vscode/
+upload/*
+*.db
+*.db-shm
+*.db-wal
+
