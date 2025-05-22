@@ -100,7 +100,7 @@ def upload():
         total_size = 0
         max_size_bytes = float(FILE_LIMIT_SIZE) * 1024 * 1024
         # 获取文件信息
-        filename = upload_file.filename
+        file_name = request.forms.get("file_name")
         # 生成唯一文件名
         file_id = str(uuid.uuid4())
         # 构建文件保存路径
@@ -112,14 +112,14 @@ def upload():
             upload_ip = upload_ip.split(",")[0].strip()
 
         # 流式读取文件并计算总大小, 每次读取8KB
-        app_logger.info(f"File upload started: {filename}, Client-IP: {upload_ip}")
+        app_logger.info(f"File upload started: {file_name}, Client-IP: {upload_ip}")
 
         with open(file_path, "wb") as f:
             while chunk := upload_file.file.read(8192):
                 f.write(chunk)
                 total_size += len(chunk)
                 if total_size > max_size_bytes:
-                    app_logger.warning(f"File size exceeded limit: {filename}, Client-IP: {upload_ip}")
+                    app_logger.warning(f"File size exceeded limit: {file_name}, Client-IP: {upload_ip}")
                     os.remove(file_path)
                     return {"status": "error", "message": f"File size over the limit of {FILE_LIMIT_SIZE} MiB"}
 
@@ -135,12 +135,12 @@ def upload():
         expiry_date = expiry_map.get(expiry_option, datetime.now(tz=timezone.utc) + timedelta(days=1))
 
         # 保存到数据库
-        file_hash, password = add_file(filename, file_id, total_size, expiry_date, upload_ip)
+        file_hash, password = add_file(file_name, file_id, total_size, expiry_date, upload_ip)
 
-        app_logger.info(f"File upload completed: {filename}, hash: {file_hash}, expiry: {expiry_option}, size: {total_size} bytes, Client-IP: {upload_ip}")
-        return {"status": "success", "file_id": file_id, "file_hash": file_hash, "filename": filename, "size": total_size, "expiry": expiry_option, "password": password, "upload_ip": upload_ip}
+        app_logger.info(f"File upload completed: {file_name}, hash: {file_hash}, expiry: {expiry_option}, size: {total_size} bytes, Client-IP: {upload_ip}")
+        return {"status": "success", "file_id": file_id, "file_hash": file_hash, "file_name": file_name, "size": total_size, "expiry": expiry_option, "password": password, "upload_ip": upload_ip}
     except Exception as e:
-        app_logger.error(f"File upload failed: {filename if 'filename' in locals() else 'unknown'}, error: {str(e)}")
+        app_logger.error(f"File upload failed: {file_name if 'file_name' in locals() else 'unknown'}, error: {str(e)}")
         if "file_path" in locals() and os.path.exists(file_path):
             try:
                 os.remove(file_path)
@@ -216,8 +216,8 @@ def get_file_info():
     # 如果提供了密码，检查密码是否正确
     if password:
         if password == file_info["password"]:
-            app_logger.info(f"File download started: {file_info['filename']}, hash: {file_hash}, Client-IP: {request.headers.get('x-forwarded-for', request.remote_addr)}")
-            return static_file(file_info["file_id"], root=UPLOAD_FOLDER, download=file_info["filename"])
+            app_logger.info(f"File download started: {file_info['file_name']}, hash: {file_hash}, Client-IP: {request.headers.get('x-forwarded-for', request.remote_addr)}")
+            return static_file(file_info["file_id"], root=UPLOAD_FOLDER, download=file_info["file_name"])
         else:
             app_logger.warning(f"Incorrect password provided for file: {file_hash}, Client-IP: {request.headers.get('x-forwarded-for', request.remote_addr)}")
             return template("views/password.html", file_hash=file_hash, error="password error")
@@ -255,7 +255,7 @@ def verify_password():
 #     if not file_info:
 #         return template("views/error.html", message="The file does not exist or has expired")
 
-#     return static_file(file_info["file_id"], root=UPLOAD_FOLDER, download=file_info["filename"])
+#     return static_file(file_info["file_id"], root=UPLOAD_FOLDER, download=file_info["file_name"])
 
 
 # 删除过期文件的任务（实际应用中应使用定时任务）
@@ -458,15 +458,15 @@ def delete_file(file_hash):
         file_path = os.path.join(UPLOAD_FOLDER, file_info["file_id"])
         if os.path.exists(file_path):
             os.remove(file_path)
-            app_logger.info(f"File deleted from filesystem: {file_info['filename']}, hash: {file_hash}, Client-IP: {request.headers.get('x-forwarded-for', request.remote_addr)}")
+            app_logger.info(f"File deleted from filesystem: {file_info['file_name']}, hash: {file_hash}, Client-IP: {request.headers.get('x-forwarded-for', request.remote_addr)}")
 
         # 从数据库中删除
         delete_file_from_db(file_hash)
-        app_logger.info(f"File record deleted from database: {file_info['filename']}, hash: {file_hash}, Client-IP: {request.headers.get('x-forwarded-for', request.remote_addr)}")
+        app_logger.info(f"File record deleted from database: {file_info['file_name']}, hash: {file_hash}, Client-IP: {request.headers.get('x-forwarded-for', request.remote_addr)}")
 
         return {"status": "success"}
     except Exception as e:
-        app_logger.error(f"File deletion failed: {file_info['filename']}, hash: {file_hash}, error: {str(e)}, Client-IP: {request.headers.get('x-forwarded-for', request.remote_addr)}")
+        app_logger.error(f"File deletion failed: {file_info['file_name']}, hash: {file_hash}, error: {str(e)}, Client-IP: {request.headers.get('x-forwarded-for', request.remote_addr)}")
         return {"status": "error", "message": str(e)}
 
 

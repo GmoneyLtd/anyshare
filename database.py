@@ -37,7 +37,7 @@ def init_db():
     CREATE TABLE IF NOT EXISTS files (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         file_id TEXT NOT NULL,
-        filename TEXT NOT NULL,
+        file_name TEXT NOT NULL,
         file_hash TEXT NOT NULL,
         file_size INTEGER NOT NULL,
         upload_date DATETIME NOT NULL,
@@ -52,7 +52,7 @@ def init_db():
     conn.close()
 
 
-def add_file(filename, file_id, file_size, expiry_date, upload_ip):
+def add_file(file_name, file_id, file_size, expiry_date, upload_ip):
     """
     将文件信息添加到数据库中。
 
@@ -76,7 +76,7 @@ def add_file(filename, file_id, file_size, expiry_date, upload_ip):
     upload_date = datetime.now(tz=timezone.utc)
 
     # 生成文件哈希
-    hash_input = f"{file_id}_{filename}_{upload_date.timestamp()}"
+    hash_input = f"{file_id}_{file_name}_{upload_date.timestamp()}"
     file_hash = hashlib.sha256(hash_input.encode()).hexdigest()[:16]
 
     # 生成随机6位密码
@@ -84,8 +84,8 @@ def add_file(filename, file_id, file_size, expiry_date, upload_ip):
 
     # 将文件信息插入到数据库中
     cursor.execute(
-        "INSERT INTO files (file_id, filename, file_hash, file_size, upload_date, expiry_date, password, upload_ip) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-        (file_id, filename, file_hash, file_size, upload_date, expiry_date, password, upload_ip),
+        "INSERT INTO files (file_id, file_name, file_hash, file_size, upload_date, expiry_date, password, upload_ip) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        (file_id, file_name, file_hash, file_size, upload_date, expiry_date, password, upload_ip),
     )
 
     # 提交数据库事务
@@ -105,7 +105,7 @@ def get_file(file_hash):
     file_hash (str): 文件的哈希值。
 
     返回:
-    dict: 包含文件信息的字典，如果找不到则返回None。
+    dict: 包含文件信息的字典, 如果找不到则返回None。
     """
     # 连接到SQLite数据库，检测类型
     conn = sqlite3.connect(DB_NAME, detect_types=sqlite3.PARSE_DECLTYPES)
@@ -190,7 +190,7 @@ def delete_file_from_db(file_hash):
     """
     从数据库中删除指定文件记录。
 
-    连接数据库，执行删除操作，移除files表中与给定文件哈希值匹配的行。
+    连接数据库, 执行删除操作, 移除files表中与给定文件哈希值匹配的行。
 
     参数:
     file_hash (str): 文件的哈希值，用于唯一标识并定位数据库中的文件记录。

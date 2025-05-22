@@ -119,6 +119,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             formData.append('expiry', selectedExpiry);
+            formData.append('file_name', file.name);
 
             // 显示上传中状态
             uploadBtn.textContent = 'uploading...';
@@ -160,40 +161,48 @@ document.addEventListener('DOMContentLoaded', function () {
     const publicLinkInput = document.getElementById('public-link');
     const protectedLinkInput = document.getElementById('protected-link');
 
-    // 更新输入框显示完整URL
-    publicLinkInput.value = baseUrl + publicLinkInput.value;
-    protectedLinkInput.value = baseUrl + protectedLinkInput.value;
+    // 更新输入框显示完整URL（添加条件检查）
+    if (publicLinkInput) {
+        publicLinkInput.value = baseUrl + publicLinkInput.value;
+    }
+    if (protectedLinkInput) {
+        protectedLinkInput.value = baseUrl + protectedLinkInput.value;
+    }
 
     // 设置复制按钮点击事件
-    publicLinkBtn.addEventListener('click', function () {
-        navigator.clipboard.writeText(publicLinkInput.value)
-            .then(() => {
-                const originalText = this.querySelector('span:last-child').textContent;
-                this.querySelector('span:last-child').textContent = 'Copying!';
+    if (publicLinkBtn) {
+        publicLinkBtn.addEventListener('click', function () {
+            navigator.clipboard.writeText(publicLinkInput.value)
+                .then(() => {
+                    const originalText = this.querySelector('span:last-child').textContent;
+                    this.querySelector('span:last-child').textContent = 'Copying!';
 
-                setTimeout(() => {
-                    this.querySelector('span:last-child').textContent = originalText;
-                }, 2000);
-            })
-            .catch(err => {
-                console.error('copy failed:', err);
-            });
-    });
+                    setTimeout(() => {
+                        this.querySelector('span:last-child').textContent = originalText;
+                    }, 2000);
+                })
+                .catch(err => {
+                    console.error('copy failed:', err);
+                });
+        });
+    }
 
-    protectedLinkBtn.addEventListener('click', function () {
-        navigator.clipboard.writeText(protectedLinkInput.value)
-            .then(() => {
-                const originalText = this.querySelector('span:last-child').textContent;
-                this.querySelector('span:last-child').textContent = 'Copying!';
+    if (protectedLinkBtn) {
+        protectedLinkBtn.addEventListener('click', function () {
+            navigator.clipboard.writeText(protectedLinkInput.value)
+                .then(() => {
+                    const originalText = this.querySelector('span:last-child').textContent;
+                    this.querySelector('span:last-child').textContent = 'Copying!';
 
-                setTimeout(() => {
-                    this.querySelector('span:last-child').textContent = originalText;
-                }, 2000);
-            })
-            .catch(err => {
-                console.error('copy failed:', err);
-            });
-    });
+                    setTimeout(() => {
+                        this.querySelector('span:last-child').textContent = originalText;
+                    }, 2000);
+                })
+                .catch(err => {
+                    console.error('copy failed:', err);
+                });
+        });
+    }
 
 
 });
