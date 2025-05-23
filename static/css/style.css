@@ -338,6 +338,12 @@ h2 {
     font-size: 14px;
 }
 
+/* 添加这个新规则，专门针对密码输入框 */
+.form-group input[type="password"] {
+    letter-spacing: 2.3px;
+    /* 可以根据需要调整间距大小 */
+}
+
 .error-message {
     background-color: #ffebee;
     color: #c62828;
