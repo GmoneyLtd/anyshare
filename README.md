@@ -64,8 +64,16 @@ anyShare/
     git clone <your-repository-url>
     cd anyshare
     ```
+2.  **设置相关目录权限**:
+    ```bash
+    # 创建目录（如果不存在）
+    mkdir -p ./log ./upload
 
-2.  **启动服务**:
+    # 设置权限 - 使用1000:1000（容器内appuser的UID和GID）
+    chown -R 1000:1000 ./log ./upload
+    chmod 750 ./log ./upload
+    ```
+3.  **启动服务**:
     使用 Docker Compose:
     ```bash
     docker compose up -d
@@ -76,7 +84,7 @@ anyShare/
     ```
     这将根据 `compose.yaml` 构建并启动服务。
 
-3.  **访问应用**:
+4.  **访问应用**:
     应用将在 `http://localhost:80` (或 `compose.yaml` 中配置的其他端口) 可用。
 
 ### 本地开发 (不使用 Docker)
