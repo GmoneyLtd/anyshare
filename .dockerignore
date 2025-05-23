@@ -47,3 +47,5 @@ develop-eggs/
 sdist/
 wheels/
 share/python-wheels/
+**/.DS_Store
+

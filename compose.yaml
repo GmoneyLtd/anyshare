@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: apuer/anyshare:1.0
+    image: apuer/anyshare:1.1
     container_name: anyshare
     restart: unless-stopped
     ports:
