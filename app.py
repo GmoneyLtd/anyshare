@@ -584,4 +584,5 @@ if __name__ == "__main__":
     app_logger.info(f"匿名访问: {'启用' if ANONYMOUS == 'true' else '禁用'}")
 
     # 启动服务器
-    serve(app, host="0.0.0.0", port=80, channel_timeout=60, ident="[AnyShare]", threads=4)
+    trusted_proxy_headers = ["X-Forwarded-For", "X-Forwarded-Proto", "X-Forwarded-Host", "X-Forwarded-Port"]
+    serve(app, host="0.0.0.0", port=80, channel_timeout=60, ident="[AnyShare]", threads=4, trusted_proxy="*", trusted_proxy_count=5, trusted_proxy_headers=trusted_proxy_headers)
