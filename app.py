@@ -140,7 +140,7 @@ def upload():
         app_logger.info(f"File upload completed: '{file_name}', hash: {file_hash}, expiry: {expiry_option}, size: {total_size} bytes, Client-IP: {upload_ip}")
         return {"status": "success", "file_id": file_id, "file_hash": file_hash, "file_name": file_name, "size": total_size, "expiry": expiry_option, "password": password, "upload_ip": upload_ip}
     except Exception as e:
-        app_logger.error(f"File upload failed: {file_name if 'file_name' in locals() else 'unknown'}, error: {str(e)}")
+        app_logger.error(f"File upload failed: '{file_name if 'file_name' in locals() else 'unknown'}', error: {str(e)}")
         if "file_path" in locals() and os.path.exists(file_path):
             try:
                 os.remove(file_path)
@@ -216,7 +216,7 @@ def get_file_info():
     # 如果提供了密码，检查密码是否正确
     if password:
         if password == file_info["password"]:
-            app_logger.info(f"File download started: {file_info['file_name']}, hash: {file_hash}, Client-IP: {request.headers.get('x-forwarded-for', request.remote_addr)}")
+            app_logger.info(f"File download started: '{file_info['file_name']}', hash: {file_hash}, Client-IP: {request.headers.get('x-forwarded-for', request.remote_addr)}")
             return static_file(file_info["file_id"], root=UPLOAD_FOLDER, download=file_info["file_name"])
         else:
             app_logger.warning(f"Incorrect password provided for file: {file_hash}, Client-IP: {request.headers.get('x-forwarded-for', request.remote_addr)}")
@@ -458,15 +458,15 @@ def delete_file(file_hash):
         file_path = os.path.join(UPLOAD_FOLDER, file_info["file_id"])
         if os.path.exists(file_path):
             os.remove(file_path)
-            app_logger.info(f"File deleted from filesystem: {file_info['file_name']}, hash: {file_hash}, Client-IP: {request.headers.get('x-forwarded-for', request.remote_addr)}")
+            app_logger.info(f"File deleted from filesystem: '{file_info['file_name']}', hash: {file_hash}, Client-IP: {request.headers.get('x-forwarded-for', request.remote_addr)}")
 
         # 从数据库中删除
         delete_file_from_db(file_hash)
-        app_logger.info(f"File record deleted from database: {file_info['file_name']}, hash: {file_hash}, Client-IP: {request.headers.get('x-forwarded-for', request.remote_addr)}")
+        app_logger.info(f"File record deleted from database: '{file_info['file_name']}', hash: {file_hash}, Client-IP: {request.headers.get('x-forwarded-for', request.remote_addr)}")
 
         return {"status": "success"}
     except Exception as e:
-        app_logger.error(f"File deletion failed: {file_info['file_name']}, hash: {file_hash}, error: {str(e)}, Client-IP: {request.headers.get('x-forwarded-for', request.remote_addr)}")
+        app_logger.error(f"File deletion failed: '{file_info['file_name']}', hash: {file_hash}, error: {str(e)}, Client-IP: {request.headers.get('x-forwarded-for', request.remote_addr)}")
         return {"status": "error", "message": str(e)}
 
 
