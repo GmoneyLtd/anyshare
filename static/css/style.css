@@ -203,10 +203,6 @@ h2 {
     font-size: 14px;
 }
 
-.file-info {
-    margin-bottom: 20px;
-}
-
 .info-row {
     display: flex;
     align-items: center;
@@ -459,9 +455,9 @@ h2 {
     background-color: #f9f9f9;
 }
 
-.file-hash {
-    /* font-family: monospace; */
-    font-size: 12px;
+.file-info {
+    display: flex;
+    flex-direction: column;
 }
 
 .time-info {
@@ -477,11 +473,6 @@ h2 {
     font-size: 12px;
     color: #777;
 }
-
-/* .actions {
-    display: flex;
-    gap: 10px;
-} */
 
 .btn-icon {
     display: inline-flex;
@@ -502,4 +493,38 @@ h2 {
 
 .delete-btn:hover {
     background-color: #ffebee;
+}
+
+.file-name {
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+    /* 控制最大宽度 */
+}
+
+.file-hash-value {
+    font-size: 12px;
+    color: #777;
+}
+
+/* 确保表格单元格垂直居中 */
+.files-table td {
+    vertical-align: middle;
+}
+
+.file-name:hover {
+    overflow: auto;
+    animation: scroll-text 5s linear infinite;
+}
+
+@keyframes scroll-text {
+    0% {
+        text-indent: 0;
+    }
+
+    100% {
+        text-indent: -100%;
+    }
 }

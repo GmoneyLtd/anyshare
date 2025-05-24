@@ -112,14 +112,14 @@ def upload():
             upload_ip = upload_ip.split(",")[0].strip()
 
         # 流式读取文件并计算总大小, 每次读取8KB
-        app_logger.info(f"File upload started: {file_name}, Client-IP: {upload_ip}")
+        app_logger.info(f"File upload started: '{file_name}', Client-IP: {upload_ip}")
 
         with open(file_path, "wb") as f:
             while chunk := upload_file.file.read(8192):
                 f.write(chunk)
                 total_size += len(chunk)
                 if total_size > max_size_bytes:
-                    app_logger.warning(f"File size exceeded limit: {file_name}, Client-IP: {upload_ip}")
+                    app_logger.warning(f"File size exceeded limit: '{file_name}', Client-IP: {upload_ip}")
                     os.remove(file_path)
                     return {"status": "error", "message": f"File size over the limit of {FILE_LIMIT_SIZE} MiB"}
 
@@ -137,7 +137,7 @@ def upload():
         # 保存到数据库
         file_hash, password = add_file(file_name, file_id, total_size, expiry_date, upload_ip)
 
-        app_logger.info(f"File upload completed: {file_name}, hash: {file_hash}, expiry: {expiry_option}, size: {total_size} bytes, Client-IP: {upload_ip}")
+        app_logger.info(f"File upload completed: '{file_name}', hash: {file_hash}, expiry: {expiry_option}, size: {total_size} bytes, Client-IP: {upload_ip}")
         return {"status": "success", "file_id": file_id, "file_hash": file_hash, "file_name": file_name, "size": total_size, "expiry": expiry_option, "password": password, "upload_ip": upload_ip}
     except Exception as e:
         app_logger.error(f"File upload failed: {file_name if 'file_name' in locals() else 'unknown'}, error: {str(e)}")

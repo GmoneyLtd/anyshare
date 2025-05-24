@@ -73,7 +73,7 @@
                     <table class="files-table">
                         <thead>
                             <tr>
-                                <th>File Hash</th>
+                                <th>File Name & Hash</th>
                                 <th>Size</th>
                                 <th>Upload IP</th>
                                 <th>Uploaded</th>
@@ -84,7 +84,10 @@
                         <tbody>
                             % for file in files:
                             <tr>
-                                <td class="file-hash">{{file['file_hash']}}</td>
+                                <td class="file-info">
+                                    <div class="file-name">{{file['file_name']}}</div>
+                                    <div class="file-hash-value">({{file['file_hash']}})</div>
+                                </td>
                                 <td>{{file['size_formatted']}}</td>
                                 <td>{{file.get('upload_ip', 'unknow')}}</td>
                                 <td>
