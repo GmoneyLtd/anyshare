@@ -3,7 +3,8 @@
     padding: 0;
     box-sizing: border-box;
     font-family: "CeraRoundProBold";
-    /* letter-spacing: 2px; */
+    font-variant-numeric: tabular-nums;
+    /* 使数字等宽 全局启用避免数字宽度压缩 */
 }
 
 body {
@@ -290,6 +291,7 @@ h2 {
     border: 1px solid #ddd;
     border-radius: 4px;
     font-size: 14px;
+    font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
     margin-bottom: 10px;
 }
 
@@ -425,6 +427,8 @@ h2 {
 .stat-value {
     font-size: 24px;
     font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    /* 使数字等宽 */
 }
 
 .stat-unit {
@@ -507,6 +511,8 @@ h2 {
 .file-hash-value {
     font-size: 12px;
     color: #777;
+    font-variant-numeric: tabular-nums;
+    /* 使数字等宽 */
 }
 
 /* 确保表格单元格垂直居中 */
