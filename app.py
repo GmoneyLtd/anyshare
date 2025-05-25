@@ -105,7 +105,7 @@ def upload():
         file_id = str(uuid.uuid4())
         # 构建文件保存路径
         file_path = os.path.join(UPLOAD_FOLDER, file_id)
-        # 获取客户端IP（支持反向代理）
+        # 获取客户端IP(支持反向代理)
         upload_ip = request.headers.get("x-forwarded-for", request.remote_addr)
         # 处理多个代理IP的情况
         if "," in upload_ip:
@@ -512,7 +512,7 @@ def get_relative_time(date):
     return f"{int(years)} years {'before' if date < now else 'after'}"
 
 
-#  API接口：获取文件上传大小限制
+# API接口: 获取文件上传大小限制
 @app.route("/api/config", method="GET")
 def get_config():
     """
