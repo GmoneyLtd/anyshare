@@ -438,6 +438,9 @@ h2 {
 
 .files-table-container {
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch; /* 提升iOS滚动体验 */
+    margin: 0 -15px; /* 负边距使表格可以全宽滚动 */
+    padding: 0 15px;
 }
 
 .files-table {
@@ -447,7 +450,7 @@ h2 {
 
 .files-table th,
 .files-table td {
-    padding: 12px 15px;
+    padding: 10px 12px;
     text-align: left;
     border-bottom: 1px solid #eee;
     font-size: 12px;
@@ -457,11 +460,6 @@ h2 {
     font-weight: 500;
     color: #555;
     background-color: #f9f9f9;
-}
-
-.file-info {
-    display: flex;
-    flex-direction: column;
 }
 
 .time-info {
@@ -504,7 +502,7 @@ h2 {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 200px;
+    max-width: 150px;
     /* 控制最大宽度 */
 }
 
@@ -532,5 +530,133 @@ h2 {
 
     100% {
         text-indent: -100%;
+    }
+}
+
+/* 响应式设计 - 移动端适配 */
+@media screen and (max-width: 768px) {
+    .container {
+        padding: 0 10px;
+    }
+    
+    .header-buttons {
+        gap: 10px;
+    }
+    
+    .upload-container,
+    .success-container,
+    .admin-container {
+        margin-top: 20px;
+    }
+    
+    .upload-box,
+    .link-box,
+    .admin-box {
+        padding: 20px;
+    }
+    
+    .stats-container {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .option-buttons {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .option {
+        padding: 10px;
+    }
+    
+    .link-actions {
+        flex-direction: column;
+    }
+    .file-name {
+        max-width: 100px;
+    }
+}
+
+/* 小屏幕手机适配 */
+@media screen and (max-width: 480px) {
+    header h1 {
+        font-size: 20px;
+    }
+    
+    .nav-link span:not(.matsym) {
+        display: none; /* 在极小屏幕上只显示图标 */
+    }
+    
+    .file-select {
+        padding: 15px;
+    }
+    
+    .drag-drop-text {
+        display: none; /* 在移动设备上隐藏拖放提示，因为大多数移动设备不支持 */
+    }
+    
+    .btn-select {
+        width: 100%; /* 让按钮占满宽度，更容易点击 */
+    }
+    
+    .file-name {
+        max-width: 100px;
+    }
+    
+    h2 {
+        font-size: 18px;
+    }
+    
+    .stat-value {
+        font-size: 20px;
+    }
+}
+
+/* 表格响应式处理 */
+@media screen and (max-width: 768px) {
+    .files-table th,
+    .files-table td {
+        padding: 8px 10px;
+        font-size: 11px;
+    }
+    
+    .time-absolute {
+        display: none; /* 在移动端隐藏详细时间，只显示相对时间 */
+    }
+    
+    .btn-icon {
+        width: 30px;
+        height: 30px;
+    }
+    
+    .matsym {
+        font-size: 20px;
+        min-width: 20px;
+        min-height: 20px;
+        max-width: 20px;
+        max-height: 20px;
+    }
+}
+
+/* 超小屏幕适配 */
+@media screen and (max-width: 360px) {
+    .files-table th:nth-child(3),
+    .files-table td:nth-child(3) {
+        display: none; /* 隐藏上传IP列 */
+    }
+}
+
+@media (hover: none) and (pointer: coarse) {
+    /* 触摸设备优化 */
+    .btn, .nav-link, .option, .btn-icon {
+        min-height: 44px; /* 苹果推荐的最小触摸目标尺寸 */
+    }
+    
+    .btn-icon {
+        min-width: 44px;
+    }
+    
+    .option {
+        padding: 12px 8px;
     }
 }
