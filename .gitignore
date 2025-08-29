@@ -214,4 +214,5 @@ tests/*
 .qoder/*
 upload/*
 log/*
+.codebuddy/
 
