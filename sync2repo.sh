@@ -386,29 +386,29 @@ fi
 # 这意味着在克隆或初始化时将默认使用这个分支
 echo "📋 设置 multi-user 为本地默认分支..."
 git symbolic-ref HEAD refs/heads/multi-user
-echo "✅ 已将 multi-user 设置为本地默认分支"
-
+echo "  ✅ 已将 multi-user 设置为本地默认分支"
+echo ""
 # ============================================================================
 # 第八步：设置远程仓库默认分支
 # ============================================================================
-echo "📋 设置multi-user远程仓库默认分支..."
+echo "📋 设置multi-user为远程仓库默认分支..."
 
 # 设置 origin 远程的 HEAD 指向 multi-user
 if git remote | grep -q "^origin$"; then
-    echo "📋 设置 origin 远程默认分支为 multi-user..."
-    git remote set-head origin multi-user 2>/dev/null || echo "⚠️  设置 origin 远程默认分支失败（可能需要先推送分支）"
+    echo "  📋 设置 origin 远程默认分支为 multi-user..."
+    git remote set-head origin multi-user 2>/dev/null || echo "  ⚠️  设置 origin 远程默认分支失败（可能需要先推送分支）"
 fi
 
 # 如果使用独立远程仓库方式，也设置 backup 的默认分支
 if [ "$USE_SEPARATE_REMOTES" = true ] && git remote | grep -q "^backup$"; then
-    echo "📋 设置 backup 远程默认分支为 multi-user..."
-    git remote set-head backup multi-user 2>/dev/null || echo "⚠️  设置 backup 远程默认分支失败（可能需要先推送分支）"
+    echo "  📋 设置 backup 远程默认分支为 multi-user..."
+    git remote set-head backup multi-user 2>/dev/null || echo "  ⚠️  设置 backup 远程默认分支失败（可能需要先推送分支）"
 fi
 
 # 如果使用统一远程仓库方式，设置 all 的默认分支
 if [ "$USE_SEPARATE_REMOTES" = false ] && git remote | grep -q "^all$"; then
-    echo "📋 设置 all 远程默认分支为 multi-user..."
-    git remote set-head all multi-user 2>/dev/null || echo "⚠️  设置 all 远程默认分支失败（可能需要先推送分支）"
+    echo "  📋 设置 all 远程默认分支为 multi-user..."
+    git remote set-head all multi-user 2>/dev/null || echo "  ⚠️  设置 all 远程默认分支失败（可能需要先推送分支）"
 fi
 
 # ============================================================================
