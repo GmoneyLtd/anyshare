@@ -7,9 +7,49 @@ document.addEventListener('DOMContentLoaded', function () {
     const fileSize = document.getElementById('fileSize');
     const uploadBtn = document.getElementById('uploadBtn');
 
+    // 显示消息函数
+    function showMessage(message, type) {
+        // 创建消息元素
+        const messageEl = document.createElement('div');
+        messageEl.className = `message message-${type}`;
+        messageEl.textContent = message;
+        
+        // 添加样式
+        messageEl.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            border-radius: 4px;
+            color: white;
+            font-weight: 500;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            ${type === 'success' ? 'background-color: #4CAF50;' : 'background-color: #f44336;'}
+        `;
+        
+        // 添加到页面
+        document.body.appendChild(messageEl);
+        
+        // 显示动画
+        setTimeout(() => {
+            messageEl.style.transform = 'translateX(0)';
+        }, 10);
+        
+        // 3秒后自动移除
+        setTimeout(() => {
+            messageEl.style.transform = 'translateX(100%)';
+            setTimeout(() => {
+                document.body.removeChild(messageEl);
+            }, 300);
+        }, 3000);
+    }
+
     // 在页面加载时获取配置
     let fileSizeLimit = 10; // 默认值
-
+    // 从后端获取上传文件大小限制
     fetch('/api/config')
         .then(response => response.json())
         .then(data => {
@@ -79,17 +119,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function displayFileInfo(file) {
         fileName.textContent = file.name;
-    
+
         // 格式化文件大小
         const fileSizeMB = file.size / (1024 * 1024);
         fileSize.textContent = fileSizeMB.toFixed(2) + ' MiB';
-    
+
         // 显示上传表单
         uploadForm.style.display = 'block';
-    
+
         // 检查文件大小
         if (fileSizeMB > fileSizeLimit) {
-            alert('File size over the ' + fileSizeLimit + ' MiB limit!');
+            showMessage('File size over the ' + fileSizeLimit + ' MiB limit!', 'error');
             uploadBtn.disabled = true;
             uploadBtn.classList.add('disabled-btn');  // 添加禁用样式
         } else {
@@ -134,18 +174,18 @@ document.addEventListener('DOMContentLoaded', function () {
                 .then(data => {
                     if (data.status === 'success') {
                         // 将完整的文件信息编码后传递给upload路由
-                        const fileInfoEncoded = encodeURIComponent(JSON.stringify(data));
+                        const fileHashEncoded = encodeURIComponent(JSON.stringify(data));
                         // 重定向到文件页面
-                        window.location.href = `/upload?file_info=${fileInfoEncoded}`;
+                        window.location.href = `/upload?file_hash=${data.file_hash}`;
                     } else {
-                        alert('upload failed: ' + data.message);
+                        showMessage('upload failed: ' + data.message, 'error');
                         uploadBtn.textContent = 'Encrypt and upload';
                         uploadBtn.disabled = false;
                     }
                 })
                 .catch(error => {
                     console.error('upload error:', error);
-                    alert('There was an error in uploading. Please try again.');
+                    showMessage('There was an error in uploading. Please try again.', 'error');
                     uploadBtn.textContent = 'Encrypt and upload';
                     uploadBtn.disabled = false;
                 });

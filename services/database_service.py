@@ -1,0 +1,477 @@
+import os
+import random
+import sqlite3
+from datetime import UTC, datetime, timedelta, timezone
+
+from config import Config
+
+config = Config()
+DB_NAME = config.DB_NAME
+
+# 从环境变量读取管理员凭证
+ADMIN_USERNAME = config.ADMIN_USERNAME
+ADMIN_PASSWORD = config.ADMIN_PASSWORD
+
+
+# 注册自定义适配器, 将 datetime 对象转换为字符串
+def adapt_datetime(dt):
+    return dt.isoformat()
+
+
+# 注册自定义转换器, 将数据库中的字符串转换为 datetime 对象
+def convert_datetime(s):
+    return datetime.fromisoformat(s.decode("utf-8"))
+
+
+# 注册适配器和转换器
+sqlite3.register_adapter(datetime, adapt_datetime)
+sqlite3.register_converter("datetime", convert_datetime)
+
+
+def init_db():
+    """
+    初始化数据库。
+
+    该函数负责创建并初始化数据库, 包括建立必要的表结构。
+    它不接受任何参数, 也没有返回值。
+    """
+    # 连接到SQLite数据库, DB_NAME为数据库文件名
+    conn = sqlite3.connect(DB_NAME, detect_types=sqlite3.PARSE_DECLTYPES)
+    cursor = conn.cursor()
+
+    # 创建用户表
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL UNIQUE,
+        password TEXT NOT NULL,
+        is_admin INTEGER DEFAULT 0,
+        created_at DATETIME NOT NULL
+    )
+    """)
+
+    # 创建文件表
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS files (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        file_name TEXT NOT NULL,
+        file_hash TEXT NOT NULL,
+        file_size INTEGER NOT NULL,
+        upload_date DATETIME NOT NULL,
+        expiry_date DATETIME NOT NULL,
+        password TEXT NOT NULL,
+        upload_ip TEXT NOT NULL,
+        downloads INTEGER DEFAULT 0,
+        username TEXT NOT NULL
+    )
+    """)
+
+    # 检查是否已存在管理员账户
+    cursor.execute("SELECT * FROM users WHERE is_admin = 1")
+
+    # 如果不存在管理员账户, 创建默认管理员
+    if not cursor.fetchone():
+        # 创建默认管理员账户
+        cursor.execute(
+            "INSERT INTO users (username, password, is_admin, created_at) VALUES (?, ?, ?, ?)",
+            (ADMIN_USERNAME, ADMIN_PASSWORD, 1, datetime.now(tz=UTC)),
+        )
+
+    # 提交事务并关闭数据库连接
+    conn.commit()
+    conn.close()
+
+
+def add_file(file_name, file_hash, file_size, expiry_date, upload_ip, username):
+    """
+    将文件信息添加到数据库中。
+
+    生成文件哈希和密码, 然后将文件信息插入到数据库中。
+
+    参数:
+    filename (str): 文件名。
+    file_size (int): 文件大小, 以字节为单位。
+    expiry_date (datetime): 文件过期日期。
+    upload_ip (str): 文件上传者的IP地址。
+    username (str): 上传用户名。
+
+    返回:
+    tuple: 文件密码。
+    """
+    # 连接到SQLite数据库, DB_NAME为数据库文件的路径
+    conn = sqlite3.connect(DB_NAME, detect_types=sqlite3.PARSE_DECLTYPES)
+    cursor = conn.cursor()
+
+    # 获取当前的UTC时间作为上传日期
+    upload_date = datetime.now(tz=UTC)
+
+    # 生成随机6位密码
+    password = "".join(random.choices("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=6))
+
+    # 将文件信息插入到数据库中
+    cursor.execute(
+        "INSERT INTO files (file_name, file_hash, file_size, upload_date, expiry_date, password, upload_ip, username) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        (
+            file_name,
+            file_hash,
+            file_size,
+            upload_date,
+            expiry_date,
+            password,
+            upload_ip,
+            username,
+        ),
+    )
+
+    # 提交数据库事务
+    conn.commit()
+    # 关闭数据库连接
+    conn.close()
+
+    # 返回文件密码
+    return password
+
+
+def get_user_files(username):
+    """
+    获取指定用户上传的所有文件
+
+    参数:
+    username (str): 用户名
+
+    返回:
+    list: 包含用户文件信息的字典列表
+    """
+    conn = sqlite3.connect(DB_NAME, detect_types=sqlite3.PARSE_DECLTYPES)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+
+    # 检查用户是否为管理员
+    user_info = get_user(username)
+    if user_info and user_info["is_admin"] == 1:
+        # 管理员可以看到所有文件
+        cursor.execute("SELECT * FROM files ORDER BY upload_date DESC")
+    else:
+        # 普通用户只能看到自己的文件
+        cursor.execute("SELECT * FROM files WHERE username = ? ORDER BY upload_date DESC", (username,))
+
+    files = cursor.fetchall()
+    conn.close()
+
+    # 将文件信息转换为字典列表, 并处理datetime对象
+    files_list = []
+    for file in [dict(file) for file in files]:
+        # 将datetime对象转换为ISO格式字符串
+        if file.get("upload_date"):
+            file["upload_date"] = file["upload_date"].isoformat()
+        if file.get("expiry_date"):
+            file["expiry_date"] = file["expiry_date"].isoformat()
+        files_list.append(file)
+
+    return files_list
+
+
+def get_file(file_hash):
+    """
+    根据文件哈希值获取文件信息。
+
+    参数:
+    file_hash (str): 文件的哈希值。
+
+    返回:
+    dict: 包含文件信息的字典, 如果找不到则返回None。
+    """
+    # 连接到SQLite数据库, 检测类型
+    conn = sqlite3.connect(DB_NAME, detect_types=sqlite3.PARSE_DECLTYPES)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+
+    # 执行查询语句, 查找匹配的文件哈希值
+    cursor.execute("SELECT * FROM files WHERE file_hash = ?", (file_hash,))
+    file = cursor.fetchone()
+
+    # 关闭数据库连接
+    conn.close()
+
+    # 如果找到了匹配的文件
+    if file:
+        # 转换为字典
+        file_dict = dict(file)
+
+        # 将datetime对象转换为ISO格式字符串
+        if file_dict.get("upload_date"):
+            file_dict["upload_date"] = file_dict["upload_date"].isoformat()
+        if file_dict.get("expiry_date"):
+            file_dict["expiry_date"] = file_dict["expiry_date"].isoformat()
+
+        # 格式化文件大小
+        size_mib = file_dict["file_size"] / (1024 * 1024)
+        file_dict["size_formatted"] = f"{size_mib:.2f} MiB"
+
+        # 返回文件信息字典
+        return file_dict
+
+    # 如果没有找到匹配的文件, 返回None
+    return None
+
+
+def delete_expired_files():
+    """
+    删除过期文件(过期超过30天)
+    """
+    # 连接到数据库, 启用类型检测以解析声明类型
+    conn = sqlite3.connect(DB_NAME, detect_types=sqlite3.PARSE_DECLTYPES)
+    cursor = conn.cursor()
+
+    # 计算30天前的时间
+    threshold_date = datetime.now(tz=UTC) - timedelta(days=30)
+
+    # 查询过期超过30天的文件
+    cursor.execute("SELECT file_hash FROM files WHERE expiry_date < ?", (threshold_date,))
+    expired_files = cursor.fetchall()
+
+    # 删除文件记录和物理文件
+    for file_record in expired_files:
+        file_hash = file_record[0]
+        file_path = os.path.join("./upload", file_hash)
+
+        # 删除物理文件
+        if os.path.exists(file_path):
+            os.remove(file_path)
+
+        # 删除数据库记录
+        cursor.execute("DELETE FROM files WHERE file_hash = ?", (file_hash,))
+
+    conn.commit()
+    conn.close()
+
+    # 记录日志
+    if len(expired_files) > 0:
+        print(f"Cleaned up {len(expired_files)} expired files")
+
+
+def delete_file_from_db(file_hash):
+    """
+    从数据库中删除指定文件记录。
+
+    连接数据库, 执行删除操作, 移除files表中与给定文件哈希值匹配的行。
+
+    参数:
+    file_hash (str): 文件的哈希值, 用于唯一标识并定位数据库中的文件记录。
+
+    返回:
+    无
+    """
+    # 连接数据库, 确保类型检测
+    conn = sqlite3.connect(DB_NAME, detect_types=sqlite3.PARSE_DECLTYPES)
+    cursor = conn.cursor()
+
+    # 执行删除操作, 使用参数化查询以防止SQL注入
+    cursor.execute("DELETE FROM files WHERE file_hash = ?", (file_hash,))
+
+    # 提交更改并关闭数据库连接
+    conn.commit()
+    conn.close()
+
+
+def add_user(username, password, is_admin=0):
+    """
+    添加新用户到数据库
+
+    参数:
+    username (str): 用户名
+    password (str): 密码
+    is_admin (int): 是否为管理员, 1表示是, 0表示否
+
+    返回:
+    bool: 添加成功返回True, 失败返回False
+    """
+    try:
+        conn = sqlite3.connect(DB_NAME, detect_types=sqlite3.PARSE_DECLTYPES)
+        cursor = conn.cursor()
+
+        # 检查用户名是否已存在
+        cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
+        if cursor.fetchone():
+            conn.close()
+            return False
+
+        # 添加新用户
+        cursor.execute(
+            "INSERT INTO users (username, password, is_admin, created_at) VALUES (?, ?, ?, ?)",
+            (username, password, is_admin, datetime.now(tz=UTC)),
+        )
+
+        conn.commit()
+        conn.close()
+        return True
+    except Exception:
+        return False
+
+
+def get_user(username, password=None):
+    """
+    根据用户名和可选的密码获取用户信息
+
+    参数:
+    username (str): 用户名
+    password (str, optional): 密码, 如果提供则验证密码
+
+    返回:
+    dict: 用户信息字典, 如果用户不存在或密码错误则返回None
+    """
+    conn = sqlite3.connect(DB_NAME, detect_types=sqlite3.PARSE_DECLTYPES)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+
+    if password:
+        cursor.execute(
+            "SELECT * FROM users WHERE username = ? AND password = ?",
+            (username, password),
+        )
+    else:
+        cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
+
+    user = cursor.fetchone()
+    conn.close()
+
+    if user:
+        return dict(user)
+    return None
+
+
+def get_all_users():
+    """
+    获取所有用户信息
+
+    返回:
+    list: 包含所有用户信息的字典列表
+    """
+    conn = sqlite3.connect(DB_NAME, detect_types=sqlite3.PARSE_DECLTYPES)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM users ORDER BY id")
+    users = cursor.fetchall()
+
+    conn.close()
+
+    # 将用户信息转换为字典列表, 并处理datetime对象
+    users_list = []
+    for user in [dict(user) for user in users]:
+        # 将datetime对象转换为ISO格式字符串
+        if user.get("created_at"):
+            user["created_at"] = user["created_at"].isoformat()
+        users_list.append(user)
+
+    return users_list
+
+
+def delete_user(username):
+    """
+    删除指定用户
+
+    参数:
+    username (str): 用户名
+
+    返回:
+    bool: 删除成功返回True, 失败返回False
+    """
+    try:
+        conn = sqlite3.connect(DB_NAME, detect_types=sqlite3.PARSE_DECLTYPES)
+        cursor = conn.cursor()
+
+        # 检查是否是管理员账户
+        cursor.execute("SELECT is_admin FROM users WHERE username = ?", (username,))
+        result = cursor.fetchone()
+
+        # 如果是管理员账户, 不允许删除
+        if result and result[0] == 1:
+            conn.close()
+            return False
+
+        # 删除用户
+        cursor.execute("DELETE FROM users WHERE username = ?", (username,))
+
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"删除用户失败: {str(e)}")
+        return False
+
+
+def update_file_expiry(file_hash, new_expiry_date):
+    """
+    更新文件的过期时间
+
+    参数:
+    file_hash (str): 文件哈希
+    new_expiry_date (datetime): 新的过期时间
+
+    返回:
+    bool: 更新成功返回True, 失败返回False
+    """
+    try:
+        conn = sqlite3.connect(DB_NAME, detect_types=sqlite3.PARSE_DECLTYPES)
+        cursor = conn.cursor()
+
+        cursor.execute(
+            "UPDATE files SET expiry_date = ? WHERE file_hash = ?",
+            (new_expiry_date, file_hash),
+        )
+
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"更新文件过期时间失败: {str(e)}")
+        return False
+
+
+def update_user_password(username, new_password):
+    """
+    更新用户密码
+
+    参数:
+    username (str): 用户名
+    new_password (str): 新密码
+
+    返回:
+    bool: 更新成功返回True, 失败返回False
+    """
+    try:
+        conn = sqlite3.connect(DB_NAME, detect_types=sqlite3.PARSE_DECLTYPES)
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE users SET password = ? WHERE username = ?",
+            (new_password, username),
+        )
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"更新用户密码失败: {str(e)}")
+        return False
+
+
+def update_downloads(file_hash):
+    """
+    更新文件的下载次数
+    参数:
+    file_hash (str): 文件哈希
+    返回:
+    bool: 更新成功返回True, 失败返回False
+    """
+    try:
+        conn = sqlite3.connect(DB_NAME, detect_types=sqlite3.PARSE_DECLTYPES)
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE files SET downloads = downloads + 1 WHERE file_hash =?",
+            (file_hash,),
+        )
+        conn.commit()
+        conn.close()
+        return True
+    except Exception:
+        return False

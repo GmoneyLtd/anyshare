@@ -18,10 +18,29 @@
                     <span aria-hidden="true" class="matsym">upload_file</span>
                     <span>Upload</span>
                 </a>
+                % if user_role == "admin":
                 <a href="/admin" class="nav-link">
                     <span aria-hidden="true" class="matsym">manage_accounts</span>
                     <span>Admin</span>
                 </a>
+                % elif user_role == "user":
+                <a href="/myfiles" class="nav-link">
+                    <span aria-hidden="true" class="matsym">folder</span>
+                    <span>My Files</span>
+                </a>
+                % end
+
+                % if user_role != "anonymous":
+                <a href="/logout" class="nav-link">
+                    <span aria-hidden="true" class="matsym">logout</span>
+                    <span>Logout</span>
+                </a>
+                % else:
+                <a href="/login" class="nav-link">
+                    <span aria-hidden="true" class="matsym">login</span>
+                    <span>Login</span>
+                </a>
+                % end
             </div>
         </div>
     </header>
@@ -70,10 +89,12 @@
                 </h2>
 
                 <div class="link-field">
-                    <input type="text" readonly id="protected-link" value="/file?hash={{file_info['file_hash']}}&pwd={{file_info['password']}}">
+                    <input type="text" readonly id="protected-link"
+                        value="/file?hash={{file_info['file_hash']}}&pwd={{file_info['password']}}">
 
                     <div class="link-actions">
-                        <a href="/file?hash={{file_info['file_hash']}}&pwd={{file_info['password']}}" class="btn btn-action">
+                        <a href="/file?hash={{file_info['file_hash']}}&pwd={{file_info['password']}}"
+                            class="btn btn-action">
                             <span aria-hidden="true" class="matsym">open_in_new</span>
                             <span>Open</span>
                         </a>
