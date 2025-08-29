@@ -48,4 +48,11 @@ sdist/
 wheels/
 share/python-wheels/
 **/.DS_Store
-
+upload/*
+*.db
+*.db-shm
+*.db-wal
+tests/*
+.qoder/*
+upload/*
+log/*

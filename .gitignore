@@ -210,4 +210,8 @@ upload/*
 *.db
 *.db-shm
 *.db-wal
+tests/*
+.qoder/*
+upload/*
+log/*
 
