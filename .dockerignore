@@ -48,4 +48,15 @@ sdist/
 wheels/
 share/python-wheels/
 **/.DS_Store
+.qoder/
+.ruff_cache/
+.venv/
+Dockerfile
+compose.yaml
+docker-build.sh
+log/
+sync2repo.sh
+tests/
+upload/
+
 
