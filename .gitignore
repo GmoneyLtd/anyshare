@@ -206,13 +206,12 @@ cython_debug/
 .cursorignore
 .cursorindexingignore.vscode/
 .vscode/
-upload/*
 *.db
 *.db-shm
 *.db-wal
-tests/*
-.qoder/*
-upload/*
-log/*
+tests/
+.qoder/
+upload/
+log/
 .codebuddy/
 

@@ -51,6 +51,9 @@ share/python-wheels/
 .qoder/
 .ruff_cache/
 .venv/
+.codebuddy/
+.dockerignore
+.gitignore
 Dockerfile
 compose.yaml
 docker-build.sh
