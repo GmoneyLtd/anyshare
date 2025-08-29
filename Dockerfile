@@ -10,7 +10,7 @@ RUN uv sync --frozen --no-cache
 COPY . .
 
 # -------------- 运行阶段 --------------
-FROM python:3.13.3-alpine
+FROM python:3.13.7-alpine
 # 使用 apk 安装 curl
 RUN apk add --no-cache curl
 WORKDIR /app
@@ -18,18 +18,21 @@ WORKDIR /app
 COPY --from=builder /app /app
 # 创建相关文件夹并保证权限属于 appuser
 RUN addgroup -S -g 1000 appuser && adduser -S -u 1000 appuser -G appuser && \
+    mkdir -p /app/log /app/upload && \
     chown -R appuser:appuser /app
 USER appuser
 # 设置环境变量，使用 `.venv` 作为虚拟环境及服务相关配置
 ENV PATH="/app/.venv/bin:$PATH"
 ENV ADMIN_USERNAME=admin
 ENV ADMIN_PASSWORD=123456
-ENV ANONYMOUS=true
-ENV FILE_LIMIT_SIZE=10.00
+ENV LOG_LEVEL=DEBUG
+ENV ANONYMOUS=false
+
 
 # 暴露应用端口
-EXPOSE 80
+EXPOSE 8000
 # 应用程序健康检查
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 CMD [ "curl", "-f", "http://localhost/api/healthz" ]
-# 运行应用
+HEALTHCHECK --interval=60s --timeout=5s --start-period=20s  --retries=3 CMD [ "curl", "-f", "http://localhost:8000/api/healthz" ]
+
+# 启动命令
 CMD ["python", "app.py"]
