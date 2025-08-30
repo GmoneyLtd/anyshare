@@ -26,6 +26,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // 为文件名添加悬停显示完整内容的功能
     function addFileNameHoverEffect() {
+        // 查找所有文件名容器（包括表格和卡片中的）
         const fileNameContainers = document.querySelectorAll('.file-name-container');
         let globalPopupElement = null;
         let globalRemoveTimer = null;
@@ -128,8 +129,40 @@ document.addEventListener('DOMContentLoaded', function () {
             e.stopPropagation();
             const fileHash = this.getAttribute('data-hash');
             const row = this.closest('tr');
-            const actionCell = row.querySelector('td:last-child');
-            if (actionCell.querySelector('.inline-confirm')) {
+            const card = this.closest('.file-card');
+
+            // 小屏幕卡片模式下直接删除，不显示确认框
+            if (card && window.innerWidth <= 768) {
+                // 添加加载状态
+                const originalIcon = this.querySelector('.matsym').textContent;
+                this.querySelector('.matsym').textContent = 'hourglass_empty';
+                this.disabled = true;
+
+                // 直接执行删除操作
+                fetch(`/delete/${fileHash}`, {
+                    method: 'POST'
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            card.remove();
+                        } else {
+                            alert('删除失败: ' + data.message);
+                        }
+                    })
+                    .catch((error) => {
+                        console.error('Error:', error);
+                        alert('删除请求失败');
+                        // 恢复按钮状态
+                        this.querySelector('.matsym').textContent = originalIcon;
+                        this.disabled = false;
+                    });
+                return;
+            }
+
+            // 桌面端表格模式显示确认框
+            const container = row ? row.querySelector('td:last-child') : card.querySelector('.file-card-actions');
+            if (container.querySelector('.inline-confirm')) {
                 return;
             }
             const confirmDiv = document.createElement('div');
@@ -139,7 +172,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <button class="btn btn-small btn-confirm">Yes</button>
                 <button class="btn btn-small btn-cancel">No</button>
             `;
-            actionCell.appendChild(confirmDiv);
+            container.appendChild(confirmDiv);
             confirmDiv.querySelector('.btn-confirm').addEventListener('click', function (e) {
                 e.stopPropagation();
                 fetch(`/delete/${fileHash}`, {
@@ -148,7 +181,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     .then(response => response.json())
                     .then(data => {
                         if (data.status === 'success') {
-                            row.remove();
+                            // 找到并移除对应的表格行或卡片
+                            if (row) {
+                                row.remove();
+                            } else if (card) {
+                                card.remove();
+                            }
                         } else {
                             confirmDiv.remove();
                             alert('删除失败: ' + data.message);

@@ -238,6 +238,51 @@
                     </table>
                 </div>
 
+                <!-- 小屏幕卡片布局 -->
+                <div class="files-cards-container">
+                    % for file in files:
+                    <div class="file-card">
+                        <div class="file-card-header">
+                            <div class="file-name-container">
+                                <div class="file-name">{{file['file_name']}}</div>
+                            </div>
+                            <div class="file-hash-value">#{{file['file_hash'][:8]}}...</div>
+                        </div>
+
+                        <div class="file-card-info">
+                            <div class="info-item">
+                                <span class="matsym">person</span>
+                                <span>{{file['username']}}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="matsym">schedule</span>
+                                <div class="time-info">
+                                    <div class="time-relative">{{file['expiry_relative']}}</div>
+                                    <div class="time-absolute" data-utc-time="{{file['expiry_date']}}">
+                                        ({{file['expiry_formatted']}})
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="file-card-actions">
+                            <a href="/file?hash={{file['file_hash']}}&pwd={{file['password']}}"
+                                class="nav-link btn-icon" title="download">
+                                <span class="matsym">download</span>
+                            </a>
+                            <button class="nav-link btn-icon extend-btn" data-hash="{{file['file_hash']}}"
+                                title="extend expiry">
+                                <span class="matsym">auto_delete</span>
+                            </button>
+                            <button class="nav-link btn-icon delete-btn" data-hash="{{file['file_hash']}}"
+                                title="delete">
+                                <span class="matsym">delete</span>
+                            </button>
+                        </div>
+                    </div>
+                    % end
+                </div>
+
                 <!-- 过期时间调整模态框 -->
                 <div id="expiry-modal" class="modal" style="display: none;">
                     <div class="modal-content">

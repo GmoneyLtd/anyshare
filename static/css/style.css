@@ -693,8 +693,132 @@ h2 {
     }
 }
 
+/* 文件卡片样式 */
+.files-cards-container {
+    display: none; /* 默认隐藏，只在小屏幕显示 */
+}
+
+.file-card {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid #eee;
+}
+
+.file-card-header {
+    margin-bottom: 12px;
+    border-bottom: 1px solid #f0f0f0;
+    padding-bottom: 8px;
+}
+
+.file-card-header .file-name {
+    font-weight: 500;
+    font-size: 16px;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    cursor: pointer;
+}
+
+.file-card-header .file-hash-value {
+    font-size: 12px;
+    color: #777;
+    font-variant-numeric: tabular-nums;
+}
+
+.file-card-info {
+    margin-bottom: 12px;
+}
+
+.file-card-info .info-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.file-card-info .info-item:last-child {
+    margin-bottom: 0;
+}
+
+.file-card-info .matsym {
+    font-size: 18px;
+    min-width: 18px;
+    min-height: 18px;
+    max-width: 18px;
+    max-height: 18px;
+    color: #666;
+}
+
+.file-card-info .time-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.file-card-info .time-relative {
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.file-card-info .time-absolute {
+    font-size: 12px;
+    color: #777;
+}
+
+.file-card-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-start;
+    padding-top: 8px;
+    border-top: 1px solid #f0f0f0;
+}
+
+.file-card-actions .btn-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #f5f5f5;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: #333;
+}
+
+.file-card-actions .btn-icon:hover {
+    background-color: #e9e9e9;
+}
+
+.file-card-actions .delete-btn:hover {
+    background-color: #ffebee;
+}
+
+.file-card-actions .matsym {
+    font-size: 20px;
+    min-width: 20px;
+    min-height: 20px;
+    max-width: 20px;
+    max-height: 20px;
+}
+
 /* 表格响应式处理 */
 @media screen and (max-width: 768px) {
+    /* 隐藏表格，显示卡片 */
+    .files-table-container {
+        display: none;
+    }
+    
+    .files-cards-container {
+        display: block;
+    }
 
     .files-table th,
     .files-table td {

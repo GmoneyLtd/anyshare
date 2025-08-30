@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // 为文件名添加悬停显示完整内容的功能
     function addFileNameHoverEffect() {
-        // 查找所有文件名容器
+        // 查找所有文件名容器（包括表格和卡片中的）
         const fileNameContainers = document.querySelectorAll('.file-name-container');
         // 创建一个全局的提示框元素，避免创建多个
         let globalPopupElement = null;
@@ -296,10 +296,43 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const fileHash = this.getAttribute('data-hash');
             const row = this.closest('tr');
-            const actionCell = row.querySelector('td:last-child');
+            const card = this.closest('.file-card');
+
+            // 小屏幕卡片模式下直接删除，不显示确认框
+            if (card && window.innerWidth <= 768) {
+                // 添加加载状态
+                const originalIcon = this.querySelector('.matsym').textContent;
+                this.querySelector('.matsym').textContent = 'hourglass_empty';
+                this.disabled = true;
+
+                // 直接执行删除操作
+                fetch(`/delete/${fileHash}`, {
+                    method: 'POST'
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            card.remove();
+                            updateStats();
+                        } else {
+                            showMessage('删除失败: ' + data.message, 'error');
+                        }
+                    })
+                    .catch((error) => {
+                        console.error('Error:', error);
+                        showMessage('删除请求失败', 'error');
+                        // 恢复按钮状态
+                        this.querySelector('.matsym').textContent = originalIcon;
+                        this.disabled = false;
+                    });
+                return;
+            }
+
+            // 桌面端表格模式显示确认框
+            const container = row ? row.querySelector('td:last-child') : card.querySelector('.file-card-actions');
 
             // 检查是否已经有确认框
-            if (actionCell.querySelector('.inline-confirm')) {
+            if (container.querySelector('.inline-confirm')) {
                 return; // 如果已经有确认框，则不做任何操作
             }
 
@@ -312,8 +345,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 <button class="btn btn-small btn-cancel">No</button>
             `;
 
-            // 添加确认元素到单元格，不替换原内容
-            actionCell.appendChild(confirmDiv);
+            // 添加确认元素到容器，不替换原内容
+            container.appendChild(confirmDiv);
 
             // 绑定确认和取消事件
             confirmDiv.querySelector('.btn-confirm').addEventListener('click', function (e) {
@@ -326,8 +359,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     .then(response => response.json())
                     .then(data => {
                         if (data.status === 'success') {
-                            // 找到并移除对应的表格行，而不是刷新整个页面
-                            row.remove();
+                            // 找到并移除对应的表格行或卡片
+                            if (row) {
+                                row.remove();
+                            } else if (card) {
+                                card.remove();
+                            }
 
                             // 可选：更新统计数据
                             updateStats();
@@ -369,7 +406,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const fileHash = this.getAttribute('data-hash');
             const row = this.closest('tr');
-            const fileNameElement = row.querySelector('.file-name');
+            const card = this.closest('.file-card');
+
+            // 根据是表格还是卡片来查找文件名
+            const fileNameElement = row ? row.querySelector('.file-name') : card.querySelector('.file-name');
             const fileName = fileNameElement ? fileNameElement.textContent : '';
 
             // 打开模态框
@@ -388,7 +428,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const actionCell = row.querySelector('td:last-child');
 
             // 检查是否已经有确认框
-            if (actionCell.querySelector('.inline-confirm')) {
+            if (actionCell && actionCell.querySelector('.inline-confirm')) {
                 return; // 如果已经有确认框，则不做任何操作
             }
 
@@ -564,7 +604,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             const actionCell = row.querySelector('td:last-child');
 
                             // 检查是否已经有确认框
-                            if (actionCell.querySelector('.inline-confirm')) {
+                            if (actionCell && actionCell.querySelector('.inline-confirm')) {
                                 return; // 如果已经有确认框，则不做任何操作
                             }
 
