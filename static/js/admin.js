@@ -567,9 +567,12 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(data => {
                 if (data.status === 'success') {
                     const usersTableBody = document.getElementById('users-table-body');
+                    const usersCardsBody = document.getElementById('users-cards-body');
                     usersTableBody.innerHTML = '';
+                    usersCardsBody.innerHTML = '';
 
                     data.users.forEach(user => {
+                        // 生成表格行
                         const row = document.createElement('tr');
                         row.innerHTML = `
                         <td>${user.username}</td>
@@ -584,6 +587,28 @@ document.addEventListener('DOMContentLoaded', function () {
                         </td>
                     `;
                         usersTableBody.appendChild(row);
+
+                        // 生成卡片
+                        const card = document.createElement('div');
+                        card.className = 'user-card';
+                        card.innerHTML = `
+                        <div class="user-card-info">
+                            <div class="user-card-username">${user.username}</div>
+                            <div class="user-card-role">
+                                <span class="matsym">${user.is_admin === 1 ? 'admin_panel_settings' : 'person'}</span>
+                                <span>${user.is_admin === 1 ? 'Admin' : 'User'}</span>
+                            </div>
+                        </div>
+                        <div class="user-card-actions">
+                            <button class="nav-link btn-icon change-password-btn" data-username="${user.username}" title="Change Password">
+                                <span class="matsym">key</span>
+                            </button>
+                            ${user.is_admin === 1 ? '' : `<button class="nav-link btn-icon delete-user-btn" data-username="${user.username}" title="Delete User">
+                                <span class="matsym">delete_forever</span>
+                            </button>`}
+                        </div>
+                    `;
+                        usersCardsBody.appendChild(card);
                     });
 
                     // 为每个更改密码按钮添加事件监听器
@@ -601,6 +626,46 @@ document.addEventListener('DOMContentLoaded', function () {
 
                             const username = this.getAttribute('data-username');
                             const row = this.closest('tr');
+                            const card = this.closest('.user-card');
+
+                            // 小屏幕卡片模式下直接删除，不显示确认框
+                            if (card && window.innerWidth <= 768) {
+                                // 添加加载状态
+                                const originalIcon = this.querySelector('.matsym').textContent;
+                                this.querySelector('.matsym').textContent = 'hourglass_empty';
+                                this.disabled = true;
+
+                                // 直接执行删除操作
+                                const formData = new FormData();
+                                formData.append('username', username);
+
+                                fetch('/users/delete', {
+                                    method: 'POST',
+                                    body: formData
+                                })
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        if (data.status === 'success') {
+                                            card.remove();
+                                            showMessage('User deleted successfully', 'success');
+                                        } else {
+                                            showMessage('Failed to delete: ' + data.message, 'error');
+                                            // 恢复按钮状态
+                                            this.querySelector('.matsym').textContent = originalIcon;
+                                            this.disabled = false;
+                                        }
+                                    })
+                                    .catch((error) => {
+                                        console.error('Error:', error);
+                                        showMessage('Delete request failed', 'error');
+                                        // 恢复按钮状态
+                                        this.querySelector('.matsym').textContent = originalIcon;
+                                        this.disabled = false;
+                                    });
+                                return;
+                            }
+
+                            // 桌面端表格模式显示确认框
                             const actionCell = row.querySelector('td:last-child');
 
                             // 检查是否已经有确认框
@@ -635,8 +700,15 @@ document.addEventListener('DOMContentLoaded', function () {
                                     .then(response => response.json())
                                     .then(data => {
                                         if (data.status === 'success') {
-                                            // 找到并移除对应的表格行
-                                            row.remove();
+                                            // 找到并移除对应的表格行和卡片
+                                            if (row) {
+                                                row.remove();
+                                            }
+                                            // 同时移除对应的卡片
+                                            const correspondingCard = document.querySelector(`.user-card .delete-user-btn[data-username="${username}"]`)?.closest('.user-card');
+                                            if (correspondingCard) {
+                                                correspondingCard.remove();
+                                            }
                                             showMessage('User deleted successfully', 'success');
                                         } else {
                                             // 移除确认元素
