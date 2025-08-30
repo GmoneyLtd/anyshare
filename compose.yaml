@@ -1,8 +1,8 @@
 services:
   hwatch:
-    image: registry.cn-hangzhou.aliyuncs.com/gmoneyltd/hwatch:latest
-    container_name: hwatch4play   
-    hostname: hwatch4play
+    image: registry.cn-hangzhou.aliyuncs.com/gmoneyltd/anyshare:latest
+    container_name: anyshare4play   
+    hostname: anyshare4play
     restart: unless-stopped
     ports:
       - 8080:8080

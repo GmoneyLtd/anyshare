@@ -859,8 +859,8 @@ function showMessage(message, type) {
     // 添加样式
     messageEl.style.cssText = `
         position: fixed;
-        top: 20px;
-        right: 20px;
+        top: 100px;
+        right: 5px;
         padding: 5px 10px;
         border-radius: 4px;
         color: white;

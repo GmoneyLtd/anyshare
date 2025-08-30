@@ -1097,24 +1097,6 @@ h2 {
     display: none;
 }
 
-/* 表格容器宽度调整 */
-.admin-container {
-    max-width: 1200px;
-    margin: 0 auto;
-}
-
-.btn-small {
-    padding: 4px 8px;
-    font-size: 12px;
-    min-width: 60px;
-}
-
-.expiry-select {
-    padding: 4px;
-    font-size: 12px;
-    margin-right: 5px;
-}
-
 /* 确保下拉框在确认菜单中有合适的样式 */
 .inline-confirm .expiry-select {
     padding: 5px;
