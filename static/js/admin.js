@@ -861,15 +861,16 @@ function showMessage(message, type) {
         position: fixed;
         top: 20px;
         right: 20px;
-        padding: 12px 20px;
+        padding: 5px 10px;
         border-radius: 4px;
         color: white;
-        font-weight: 500;
+        font-weight: 400;
+        font-size: 10.5px;
         z-index: 1000;
         box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         transform: translateX(100%);
         transition: transform 0.3s ease;
-        ${type === 'success' ? 'background-color:rgb(191, 240, 194);' : 'background-color:rgba(224, 89, 79, 0.63);'}
+        ${type === 'success' ? 'background-color:rgb(237, 142, 161);' : 'background-color:rgba(123, 103, 102, 0.63);'}
     `;
 
     // 添加到页面
