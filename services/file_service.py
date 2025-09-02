@@ -1,7 +1,6 @@
 import hashlib
 import os
-import random
-from datetime import UTC, datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from services.database_service import add_file as db_add_file
 from services.database_service import delete_expired_files as db_delete_expired_files

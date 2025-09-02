@@ -4,24 +4,25 @@ from datetime import datetime
 from bottle import Bottle, redirect, request, response, static_file, template
 
 from config import Config
+from services.chunk_upload_service import (
+    cancel_chunk_upload,
+    complete_chunk_upload,
+    create_chunk_upload_session,
+    get_chunk_upload_status,
+    upload_chunk,
+)
 from services.database_service import (
-    add_user,
-    delete_expired_files,
-    delete_user,
-    get_all_users,
     get_file,
     get_user,
     get_user_files,
-    init_db,
 )
 from services.file_service import delete_file, download_file, update_file_expiry, upload_file
-from services.logger_service import get_logger, setup_logger
+from services.logger_service import get_logger
 from services.system_service import (
     calculate_statistics,
     format_size,
     get_relative_time,
     get_system_config,
-    health_check,
     update_system_config,
 )
 from services.user_service import (
@@ -258,7 +259,59 @@ def get_file_info():
 
     if result["status"] == "success":
         file_on_disk = os.path.basename(result["file_path"])
-        return static_file(file_on_disk, root=config.UPLOAD_FOLDER, download=result["file_name"])
+
+        # 支持断点续传的文件下载
+        file_path = result["file_path"]
+        file_name = result["file_name"]
+
+        # 获取文件大小
+        file_size = os.path.getsize(file_path)
+
+        # 检查是否有Range请求头(断点续传)
+        range_header = request.headers.get("Range")
+
+        if range_header:
+            # 解析Range头
+            try:
+                range_match = range_header.replace("bytes=", "").split("-")
+                start = int(range_match[0]) if range_match[0] else 0
+                end = int(range_match[1]) if range_match[1] else file_size - 1
+
+                # 验证范围
+                if start >= file_size or end >= file_size or start > end:
+                    response.status = 416  # Range Not Satisfiable
+                    response.headers["Content-Range"] = f"bytes */{file_size}"
+                    return "Range Not Satisfiable"
+
+                # 设置响应头
+                response.status = 206  # Partial Content
+                response.headers["Content-Range"] = f"bytes {start}-{end}/{file_size}"
+                response.headers["Accept-Ranges"] = "bytes"
+                response.headers["Content-Length"] = str(end - start + 1)
+                response.headers["Content-Type"] = "application/octet-stream"
+                response.headers["Content-Disposition"] = f'attachment; filename="{file_name}"'
+
+                # 读取指定范围的文件内容
+                def generate_partial_content():
+                    with open(file_path, "rb") as f:
+                        f.seek(start)
+                        remaining = end - start + 1
+                        while remaining > 0:
+                            chunk_size = min(8192, remaining)
+                            chunk = f.read(chunk_size)
+                            if not chunk:
+                                break
+                            remaining -= len(chunk)
+                            yield chunk
+
+                return generate_partial_content()
+
+            except (ValueError, IndexError):
+                # Range头格式错误, 返回完整文件
+                pass
+
+        # 返回完整文件
+        return static_file(file_on_disk, root=config.UPLOAD_FOLDER, download=file_name)
     elif result["status"] == "password_required":
         # 确定用户角色
         username = request.get_cookie("username", secret="<5}>h~1RU4EXP87") or "anonymous"
@@ -677,6 +730,155 @@ def api_get_config():
     """
     app_logger.debug("Config endpoint accessed")
     return {"file_size_limit": float(config.FILE_LIMIT_SIZE)}
+
+
+# 分片上传相关路由
+@app.route("/api/chunk/session", method="POST")
+def create_chunk_session():
+    """
+    创建分片上传会话
+    """
+    # 验证用户权限
+    username = request.get_cookie("username", secret="<5}>h~1RU4EXP87") or "anonymous"
+    client_ip = request.headers.get("x-forwarded-for", request.remote_addr)
+
+    if username == "anonymous" and config.ANONYMOUS == "false":
+        app_logger.warning(f"Unauthorized chunk upload attempt from IP: {client_ip}")
+        return {"status": "error", "message": "unauthorized"}
+
+    # 获取用户信息
+    user_info = get_user(username) if username != "anonymous" else {"username": "anonymous"}
+
+    # 获取请求参数
+    file_name = request.forms.get("file_name")
+    file_size = request.forms.get("file_size")
+    chunk_size = request.forms.get("chunk_size")
+
+    if not file_name or not file_size:
+        return {"status": "error", "message": "Missing required parameters"}
+
+    try:
+        file_size = int(file_size)
+        chunk_size = int(chunk_size) if chunk_size else None
+
+        # 检查文件大小限制
+        max_size_bytes = float(config.FILE_LIMIT_SIZE) * 1024 * 1024
+        if file_size > max_size_bytes:
+            return {"status": "error", "message": f"File size over the limit of {config.FILE_LIMIT_SIZE} MiB"}
+
+        # 创建分片上传会话
+        result = create_chunk_upload_session(file_name, file_size, user_info, client_ip, chunk_size)
+        return result
+
+    except ValueError:
+        return {"status": "error", "message": "Invalid file size or chunk size"}
+
+
+@app.route("/api/chunk/upload", method="POST")
+def upload_chunk_route():
+    """
+    上传文件分片
+    """
+    # 验证用户权限
+    username = request.get_cookie("username", secret="<5}>h~1RU4EXP87") or "anonymous"
+    client_ip = request.headers.get("x-forwarded-for", request.remote_addr)
+
+    if username == "anonymous" and config.ANONYMOUS == "false":
+        return {"status": "error", "message": "unauthorized"}
+
+    # 获取用户信息
+    user_info = get_user(username) if username != "anonymous" else {"username": "anonymous"}
+
+    # 获取请求参数
+    session_id = request.forms.get("session_id")
+    chunk_index = request.forms.get("chunk_index")
+    chunk_file = request.files.get("chunk")
+
+    if not session_id or chunk_index is None or not chunk_file:
+        return {"status": "error", "message": "Missing required parameters"}
+
+    try:
+        chunk_index = int(chunk_index)
+        chunk_data = chunk_file.file.read()
+
+        # 上传分片
+        result = upload_chunk(session_id, chunk_index, chunk_data, user_info, client_ip)
+        return result
+
+    except ValueError:
+        return {"status": "error", "message": "Invalid chunk index"}
+
+
+@app.route("/api/chunk/complete", method="POST")
+def complete_chunk_upload_route():
+    """
+    完成分片上传
+    """
+    # 验证用户权限
+    username = request.get_cookie("username", secret="<5}>h~1RU4EXP87") or "anonymous"
+    client_ip = request.headers.get("x-forwarded-for", request.remote_addr)
+
+    if username == "anonymous" and config.ANONYMOUS == "false":
+        return {"status": "error", "message": "unauthorized"}
+
+    # 获取用户信息
+    user_info = get_user(username) if username != "anonymous" else {"username": "anonymous"}
+
+    # 获取请求参数
+    session_id = request.forms.get("session_id")
+
+    if not session_id:
+        return {"status": "error", "message": "Missing session_id"}
+
+    # 完成分片上传
+    result = complete_chunk_upload(session_id, user_info, client_ip, config.UPLOAD_FOLDER)
+    return result
+
+
+@app.route("/api/chunk/status/<session_id>", method="GET")
+def get_chunk_status_route(session_id):
+    """
+    获取分片上传状态
+    """
+    # 验证用户权限
+    username = request.get_cookie("username", secret="<5}>h~1RU4EXP87") or "anonymous"
+    client_ip = request.headers.get("x-forwarded-for", request.remote_addr)
+
+    if username == "anonymous" and config.ANONYMOUS == "false":
+        return {"status": "error", "message": "unauthorized"}
+
+    # 获取用户信息
+    user_info = get_user(username) if username != "anonymous" else {"username": "anonymous"}
+
+    # 获取上传状态
+    result = get_chunk_upload_status(session_id, user_info, client_ip)
+    return result
+
+
+@app.route("/api/chunk/cancel", method="POST")
+def cancel_chunk_upload_route():
+    """
+    取消分片上传
+    """
+    # 验证用户权限
+    username = request.get_cookie("username", secret="<5}>h~1RU4EXP87") or "anonymous"
+    client_ip = request.headers.get("x-forwarded-for", request.remote_addr)
+
+    if username == "anonymous" and config.ANONYMOUS == "false":
+        return {"status": "error", "message": "unauthorized"}
+
+    # 获取用户信息
+    user_info = get_user(username) if username != "anonymous" else {"username": "anonymous"}
+
+    # 获取请求参数
+    session_id = request.forms.get("session_id")
+
+    if not session_id:
+        return {"status": "error", "message": "Missing session_id"}
+
+    # 取消分片上传
+    result = cancel_chunk_upload(session_id, user_info, client_ip)
+    return result
 
 
 @app.route("/api/healthz", method="GET")

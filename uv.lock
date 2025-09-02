@@ -14,7 +14,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "bottle", specifier = ">=0.13.3" },
+    { name = "bottle", specifier = ">=0.13.4" },
     { name = "loguru", specifier = ">=0.7.3" },
     { name = "waitress", specifier = ">=3.0.2" },
 ]

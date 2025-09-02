@@ -3,7 +3,7 @@ name = "anyshare"
 version = "0.1.0"
 requires-python = ">=3.13"
 dependencies = [
-    "bottle>=0.13.3",
+    "bottle>=0.13.4",
     "loguru>=0.7.3",
     "waitress>=3.0.2",
 ]

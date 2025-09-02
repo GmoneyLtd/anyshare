@@ -1,13 +1,12 @@
 import os
 import threading
 import time
-from datetime import datetime, timedelta, timezone
 
 from waitress import serve
 
 from services.database_service import delete_expired_files, init_db
 from services.logger_service import get_logger, setup_logger
-from web.routes import app, config
+from web.routes import app
 
 
 def setup_app(config_obj):

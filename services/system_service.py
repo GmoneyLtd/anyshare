@@ -1,5 +1,4 @@
-import os
-from datetime import UTC, datetime, timezone
+from datetime import UTC, datetime
 
 from services.database_service import get_user_files as db_get_user_files
 from services.logger_service import get_logger

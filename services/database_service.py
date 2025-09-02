@@ -1,7 +1,7 @@
 import os
 import random
 import sqlite3
-from datetime import UTC, datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from config import Config
 
@@ -63,6 +63,38 @@ def init_db():
         upload_ip TEXT NOT NULL,
         downloads INTEGER DEFAULT 0,
         username TEXT NOT NULL
+    )
+    """)
+
+    # 创建上传会话表
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS upload_sessions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        session_id TEXT UNIQUE NOT NULL,
+        file_name TEXT NOT NULL,
+        file_size INTEGER NOT NULL,
+        chunk_size INTEGER NOT NULL,
+        total_chunks INTEGER NOT NULL,
+        uploaded_chunks TEXT DEFAULT '',
+        file_hash TEXT,
+        username TEXT DEFAULT 'anonymous',
+        upload_ip TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        status TEXT DEFAULT 'uploading'
+    )
+    """)
+
+    # 创建分片表
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS upload_chunks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        session_id TEXT NOT NULL,
+        chunk_index INTEGER NOT NULL,
+        chunk_hash TEXT NOT NULL,
+        chunk_size INTEGER NOT NULL,
+        uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(session_id, chunk_index)
     )
     """)
 
@@ -474,4 +506,246 @@ def update_downloads(file_hash):
         conn.close()
         return True
     except Exception:
+        return False
+
+
+# 分片上传相关函数
+def create_upload_session(session_id, file_name, file_size, chunk_size, total_chunks, username, upload_ip):
+    """
+    创建上传会话
+
+    参数:
+    session_id (str): 会话ID
+    file_name (str): 文件名
+    file_size (int): 文件大小
+    chunk_size (int): 分片大小
+    total_chunks (int): 总分片数
+    username (str): 用户名
+    upload_ip (str): 上传IP
+
+    返回:
+    bool: 创建成功返回True, 失败返回False
+    """
+    try:
+        conn = sqlite3.connect(DB_NAME, detect_types=sqlite3.PARSE_DECLTYPES)
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            INSERT INTO upload_sessions 
+            (session_id, file_name, file_size, chunk_size, total_chunks, username, upload_ip, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+            (
+                session_id,
+                file_name,
+                file_size,
+                chunk_size,
+                total_chunks,
+                username,
+                upload_ip,
+                datetime.now(tz=UTC),
+                datetime.now(tz=UTC),
+            ),
+        )
+
+        conn.commit()
+        conn.close()
+        return True
+    except Exception:
+        return False
+
+
+def get_upload_session(session_id):
+    """
+    获取上传会话信息
+
+    参数:
+    session_id (str): 会话ID
+
+    返回:
+    dict: 会话信息字典, 如果不存在则返回None
+    """
+    conn = sqlite3.connect(DB_NAME, detect_types=sqlite3.PARSE_DECLTYPES)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM upload_sessions WHERE session_id = ?", (session_id,))
+    session = cursor.fetchone()
+    conn.close()
+
+    if session:
+        session_dict = dict(session)
+        # 处理datetime对象
+        if session_dict.get("created_at"):
+            session_dict["created_at"] = session_dict["created_at"].isoformat()
+        if session_dict.get("updated_at"):
+            session_dict["updated_at"] = session_dict["updated_at"].isoformat()
+        return session_dict
+    return None
+
+
+def update_upload_session(session_id, uploaded_chunks=None, file_hash=None, status=None):
+    """
+    更新上传会话
+
+    参数:
+    session_id (str): 会话ID
+    uploaded_chunks (str): 已上传分片列表
+    file_hash (str): 文件哈希
+    status (str): 状态
+
+    返回:
+    bool: 更新成功返回True, 失败返回False
+    """
+    try:
+        conn = sqlite3.connect(DB_NAME, detect_types=sqlite3.PARSE_DECLTYPES)
+        cursor = conn.cursor()
+
+        update_fields = ["updated_at = ?"]
+        params = [datetime.now(tz=UTC)]
+
+        if uploaded_chunks is not None:
+            update_fields.append("uploaded_chunks = ?")
+            params.append(uploaded_chunks)
+
+        if file_hash is not None:
+            update_fields.append("file_hash = ?")
+            params.append(file_hash)
+
+        if status is not None:
+            update_fields.append("status = ?")
+            params.append(status)
+
+        params.append(session_id)
+
+        cursor.execute(f"UPDATE upload_sessions SET {', '.join(update_fields)} WHERE session_id = ?", params)
+
+        conn.commit()
+        conn.close()
+        return True
+    except Exception:
+        return False
+
+
+def add_upload_chunk(session_id, chunk_index, chunk_hash, chunk_size):
+    """
+    添加上传分片记录
+
+    参数:
+    session_id (str): 会话ID
+    chunk_index (int): 分片索引
+    chunk_hash (str): 分片哈希
+    chunk_size (int): 分片大小
+
+    返回:
+    bool: 添加成功返回True, 失败返回False
+    """
+    try:
+        conn = sqlite3.connect(DB_NAME, detect_types=sqlite3.PARSE_DECLTYPES)
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            INSERT OR REPLACE INTO upload_chunks 
+            (session_id, chunk_index, chunk_hash, chunk_size, uploaded_at)
+            VALUES (?, ?, ?, ?, ?)
+        """,
+            (session_id, chunk_index, chunk_hash, chunk_size, datetime.now(tz=UTC)),
+        )
+
+        conn.commit()
+        conn.close()
+        return True
+    except Exception:
+        return False
+
+
+def get_uploaded_chunks(session_id):
+    """
+    获取已上传的分片列表
+
+    参数:
+    session_id (str): 会话ID
+
+    返回:
+    list: 已上传分片索引列表
+    """
+    conn = sqlite3.connect(DB_NAME, detect_types=sqlite3.PARSE_DECLTYPES)
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT chunk_index FROM upload_chunks WHERE session_id = ? ORDER BY chunk_index", (session_id,))
+    chunks = cursor.fetchall()
+    conn.close()
+
+    return [chunk[0] for chunk in chunks]
+
+
+def delete_upload_session(session_id):
+    """
+    删除上传会话及相关分片记录
+
+    参数:
+    session_id (str): 会话ID
+
+    返回:
+    bool: 删除成功返回True, 失败返回False
+    """
+    try:
+        conn = sqlite3.connect(DB_NAME, detect_types=sqlite3.PARSE_DECLTYPES)
+        cursor = conn.cursor()
+
+        # 删除分片记录
+        cursor.execute("DELETE FROM upload_chunks WHERE session_id = ?", (session_id,))
+        # 删除会话记录
+        cursor.execute("DELETE FROM upload_sessions WHERE session_id = ?", (session_id,))
+
+        conn.commit()
+        conn.close()
+        return True
+    except Exception:
+        return False
+
+
+def cleanup_expired_sessions():
+    """
+    清理过期的上传会话(超过24小时)
+    """
+    try:
+        conn = sqlite3.connect(DB_NAME, detect_types=sqlite3.PARSE_DECLTYPES)
+        cursor = conn.cursor()
+
+        # 计算24小时前的时间
+        threshold_date = datetime.now(tz=UTC) - timedelta(hours=24)
+
+        # 查询过期会话
+        cursor.execute(
+            "SELECT session_id FROM upload_sessions WHERE created_at < ? AND status != 'completed'", (threshold_date,)
+        )
+        expired_sessions = cursor.fetchall()
+
+        # 删除过期会话及相关分片
+        for session in expired_sessions:
+            session_id = session[0]
+            cursor.execute("DELETE FROM upload_chunks WHERE session_id = ?", (session_id,))
+            cursor.execute("DELETE FROM upload_sessions WHERE session_id = ?", (session_id,))
+
+            # 删除临时分片文件
+            import os
+
+            temp_dir = f"./upload/temp/{session_id}"
+            if os.path.exists(temp_dir):
+                import shutil
+
+                shutil.rmtree(temp_dir)
+
+        conn.commit()
+        conn.close()
+
+        if len(expired_sessions) > 0:
+            print(f"Cleaned up {len(expired_sessions)} expired upload sessions")
+
+        return True
+    except Exception as e:
+        print(f"Failed to cleanup expired sessions: {str(e)}")
         return False
