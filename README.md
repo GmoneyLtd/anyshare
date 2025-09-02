@@ -98,8 +98,13 @@ anyShare 通过环境变量进行配置。以下是所有可用的配置项：
 | `DB_NAME`         | SQLite 数据库文件名                      | `anyshare.db`     | -                     |
 | `ADMIN_USERNAME`  | 默认管理员用户名                         | `admin`           | `admin`               |
 | `ADMIN_PASSWORD`  | 默认管理员密码                           | `admin`           | `admin`               |
+| `COOKIE_SECRET`   | 用于签名会话 Cookie 的密钥。为了安全，建议设置为一个长的随机字符串。 | (自动生成)        | `your-super-secret-key` |
 
 **注意**: 在使用 Docker Compose 部署时，`compose.yaml` 文件中定义的环境变量会覆盖代码中的默认值。
+
+## 🔒 安全增强
+
+- **Cookie 安全**: 为了防止会话劫持，应用的会话 Cookie 使用一个安全的、随机生成的密钥进行签名。您可以通过设置 `COOKIE_SECRET` 环境变量来提供自己的密钥。
 
 ## 📂 项目结构
 

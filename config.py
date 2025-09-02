@@ -1,4 +1,5 @@
 import os
+import secrets
 
 
 class Config:
@@ -23,3 +24,6 @@ class Config:
     # 管理员配置
     ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
     ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin")
+
+    # Cookie Secret
+    COOKIE_SECRET = os.getenv("COOKIE_SECRET", secrets.token_hex(16))

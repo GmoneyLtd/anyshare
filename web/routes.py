@@ -75,7 +75,7 @@ def index():
     否则, 重定向到登录页面。
     """
     # 从cookie中获取用户名并验证登陆和匿名登陆情况
-    username = request.get_cookie("username", secret="<5}>h~1RU4EXP87") or "anonymous"
+    username = request.get_cookie("username", secret=config.COOKIE_SECRET) or "anonymous"
     upload_ip = request.headers.get("x-forwarded-for", request.remote_addr)
 
     # 确定用户角色
@@ -140,7 +140,7 @@ def login():
     if result["status"] == "success":
         user = result["user"]
         # 设置会话cookie
-        response.set_cookie("username", username, secret="<5}>h~1RU4EXP87", path="/")
+        response.set_cookie("username", username, secret=config.COOKIE_SECRET, path="/")
 
         # 根据用户角色重定向到适当的页面
         if user["is_admin"] == 1:
@@ -166,7 +166,7 @@ def upload():
         dict: 包含上传状态、文件ID、文件哈希、文件名、大小、过期选项、密码和上传IP的信息。
     """
     # 从cookie中获取用户名并验证上传文件权限情况
-    username = request.get_cookie("username", secret="<5}>h~1RU4EXP87") or "anonymous"
+    username = request.get_cookie("username", secret=config.COOKIE_SECRET) or "anonymous"
     # 获取客户端IP(支持反向代理)
     upload_ip = request.headers.get("x-forwarded-for", request.remote_addr)
 
@@ -196,7 +196,7 @@ def upload_success():
     如果提供了文件信息, 则解析文件信息并渲染上传成功的页面; 否则重定向到主页。
     """
     # 从cookie中获取用户名并验证上传文件权限情况
-    username = request.get_cookie("username", secret="<5}>h~1RU4EXP87") or "anonymous"
+    username = request.get_cookie("username", secret=config.COOKIE_SECRET) or "anonymous"
     # 获取URL参数中的文件信息字符串
     file_hash = request.query.get("file_hash")
     # 获取客户端IP(支持反向代理)
@@ -314,7 +314,7 @@ def get_file_info():
         return static_file(file_on_disk, root=config.UPLOAD_FOLDER, download=file_name)
     elif result["status"] == "password_required":
         # 确定用户角色
-        username = request.get_cookie("username", secret="<5}>h~1RU4EXP87") or "anonymous"
+        username = request.get_cookie("username", secret=config.COOKIE_SECRET) or "anonymous"
         if username == "anonymous":
             user_role = "anonymous"
         else:
@@ -327,7 +327,7 @@ def get_file_info():
     elif result["status"] == "error":
         if "password error" in result["message"]:
             # 确定用户角色
-            username = request.get_cookie("username", secret="<5}>h~1RU4EXP87") or "anonymous"
+            username = request.get_cookie("username", secret=config.COOKIE_SECRET) or "anonymous"
             if username == "anonymous":
                 user_role = "anonymous"
             else:
@@ -374,7 +374,7 @@ def admin_page():
     获取所有文件信息, 格式化时间, 然后渲染管理员页面模板。
     """
     # 从cookie中获取用户名并验证上传文件权限情况
-    username = request.get_cookie("username", secret="<5}>h~1RU4EXP87") or "anonymous"
+    username = request.get_cookie("username", secret=config.COOKIE_SECRET) or "anonymous"
     # 获取客户端IP(支持反向代理)
     upload_ip = request.headers.get("x-forwarded-for", request.remote_addr)
     # 获取用户信息
@@ -445,7 +445,7 @@ def get_admin_stats_route():
         dict: 包含统计信息的字典, 如活跃文件数和存储使用情况。
     """
     # 从cookie中获取用户名并验证上传文件权限情况
-    username = request.get_cookie("username", secret="<5}>h~1RU4EXP87") or "anonymous"
+    username = request.get_cookie("username", secret=config.COOKIE_SECRET) or "anonymous"
     # 获取客户端IP(支持反向代理)
     upload_ip = request.headers.get("x-forwarded-for", request.remote_addr)
     if username == "anonymous":
@@ -474,7 +474,7 @@ def get_all_users_list():
         dict: 包含用户列表的字典。
     """
     # 从cookie中获取用户名并验证权限
-    username = request.get_cookie("username", secret="<5}>h~1RU4EXP87") or "anonymous"
+    username = request.get_cookie("username", secret=config.COOKIE_SECRET) or "anonymous"
     # 获取客户端IP(支持反向代理)
     client_ip = request.headers.get("x-forwarded-for", request.remote_addr)
 
@@ -500,12 +500,12 @@ def logout():
     通过删除用户的会话cookie来实现登出功能, 然后重定向用户到登录页面。
     """
     # 从cookie中获取用户名并验证上传文件权限情况
-    username = request.get_cookie("username", secret="<5}>h~1RU4EXP87") or "anonymous"
+    username = request.get_cookie("username", secret=config.COOKIE_SECRET) or "anonymous"
     # 获取客户端IP(支持反向代理)
     upload_ip = request.headers.get("x-forwarded-for", request.remote_addr)
     if username != "anonymous":
         # 删除用户会话cookie
-        response.delete_cookie("username", secret="<5}>h~1RU4EXP87")
+        response.delete_cookie("username", secret=config.COOKIE_SECRET)
     app_logger.info(f"{username} logged out, Client-IP: {upload_ip}")
     # 重定向用户到登录页面
     return redirect("/login")
@@ -528,7 +528,7 @@ def delete_file_route(file_hash):
     dict: 包含操作状态和可选的错误消息。
     """
     # 从cookie中获取用户名并验证上传文件权限情况
-    username = request.get_cookie("username", secret="<5}>h~1RU4EXP87") or "anonymous"
+    username = request.get_cookie("username", secret=config.COOKIE_SECRET) or "anonymous"
     # 获取客户端IP(支持反向代理)
     client_ip = request.headers.get("x-forwarded-for", request.remote_addr)
 
@@ -549,7 +549,7 @@ def add_user_route():
     检查用户是否已登录且是管理员, 然后处理添加用户的请求。
     """
     # 从cookie中获取用户名并验证上传文件权限情况
-    username = request.get_cookie("username", secret="<5}>h~1RU4EXP87") or "anonymous"
+    username = request.get_cookie("username", secret=config.COOKIE_SECRET) or "anonymous"
     # 获取客户端IP(支持反向代理)
     client_ip = request.headers.get("x-forwarded-for", request.remote_addr)
 
@@ -584,7 +584,7 @@ def delete_user_route():
     检查用户是否已登录且是管理员, 然后处理删除用户的请求。
     """
     # 从cookie中获取用户名并验证上传文件权限情况
-    username = request.get_cookie("username", secret="<5}>h~1RU4EXP87") or "anonymous"
+    username = request.get_cookie("username", secret=config.COOKIE_SECRET) or "anonymous"
     # 获取客户端IP(支持反向代理)
     client_ip = request.headers.get("x-forwarded-for", request.remote_addr)
     # 获取用户信息
@@ -606,7 +606,7 @@ def update_expiry_route():
     检查用户是否已登录且是管理员, 然后处理更新文件过期时间的请求。
     """
     # 检查是否已登录
-    username = request.get_cookie("username", secret="<5}>h~1RU4EXP87")
+    username = request.get_cookie("username", secret=config.COOKIE_SECRET)
     if not username:
         return {"status": "error", "message": "unauthorized"}
 
@@ -638,7 +638,7 @@ def change_password_route():
     管理员可以修改所有用户密码, 普通用户只能修改自己密码。
     """
     # 检查是否已登录
-    current_user = request.get_cookie("username", secret="<5}>h~1RU4EXP87")
+    current_user = request.get_cookie("username", secret=config.COOKIE_SECRET)
     if not current_user or current_user == "anonymous":
         return {"status": "error", "message": "unauthorized"}
 
@@ -670,7 +670,7 @@ def update_config_route():
     只有管理员可以访问。
     """
     # 检查是否已登录
-    username = request.get_cookie("username", secret="<5}>h~1RU4EXP87")
+    username = request.get_cookie("username", secret=config.COOKIE_SECRET)
     if not username or username == "anonymous":
         return {"status": "error", "message": "unauthorized"}
 
@@ -706,7 +706,7 @@ def get_config_route():
     只有管理员可以访问。
     """
     # 检查是否已登录
-    username = request.get_cookie("username", secret="<5}>h~1RU4EXP87")
+    username = request.get_cookie("username", secret=config.COOKIE_SECRET)
     if not username or username == "anonymous":
         return {"status": "error", "message": "unauthorized"}
 
@@ -739,7 +739,7 @@ def create_chunk_session():
     创建分片上传会话
     """
     # 验证用户权限
-    username = request.get_cookie("username", secret="<5}>h~1RU4EXP87") or "anonymous"
+    username = request.get_cookie("username", secret=config.COOKIE_SECRET) or "anonymous"
     client_ip = request.headers.get("x-forwarded-for", request.remote_addr)
 
     if username == "anonymous" and config.ANONYMOUS == "false":
@@ -780,7 +780,7 @@ def upload_chunk_route():
     上传文件分片
     """
     # 验证用户权限
-    username = request.get_cookie("username", secret="<5}>h~1RU4EXP87") or "anonymous"
+    username = request.get_cookie("username", secret=config.COOKIE_SECRET) or "anonymous"
     client_ip = request.headers.get("x-forwarded-for", request.remote_addr)
 
     if username == "anonymous" and config.ANONYMOUS == "false":
@@ -815,7 +815,7 @@ def complete_chunk_upload_route():
     完成分片上传
     """
     # 验证用户权限
-    username = request.get_cookie("username", secret="<5}>h~1RU4EXP87") or "anonymous"
+    username = request.get_cookie("username", secret=config.COOKIE_SECRET) or "anonymous"
     client_ip = request.headers.get("x-forwarded-for", request.remote_addr)
 
     if username == "anonymous" and config.ANONYMOUS == "false":
@@ -841,7 +841,7 @@ def get_chunk_status_route(session_id):
     获取分片上传状态
     """
     # 验证用户权限
-    username = request.get_cookie("username", secret="<5}>h~1RU4EXP87") or "anonymous"
+    username = request.get_cookie("username", secret=config.COOKIE_SECRET) or "anonymous"
     client_ip = request.headers.get("x-forwarded-for", request.remote_addr)
 
     if username == "anonymous" and config.ANONYMOUS == "false":
@@ -861,7 +861,7 @@ def cancel_chunk_upload_route():
     取消分片上传
     """
     # 验证用户权限
-    username = request.get_cookie("username", secret="<5}>h~1RU4EXP87") or "anonymous"
+    username = request.get_cookie("username", secret=config.COOKIE_SECRET) or "anonymous"
     client_ip = request.headers.get("x-forwarded-for", request.remote_addr)
 
     if username == "anonymous" and config.ANONYMOUS == "false":
@@ -905,7 +905,7 @@ def my_files_page():
     获取用户自己的文件列表, 然后渲染用户文件页面模板。
     """
     # 从cookie中获取用户名并验证上传文件权限情况
-    username = request.get_cookie("username", secret="<5}>h~1RU4EXP87") or "anonymous"
+    username = request.get_cookie("username", secret=config.COOKIE_SECRET) or "anonymous"
     # 获取客户端IP(支持反向代理)
     upload_ip = request.headers.get("x-forwarded-for", request.remote_addr)
     if username == "anonymous":
