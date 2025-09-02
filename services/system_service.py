@@ -48,17 +48,6 @@ def update_system_config(admin_user, anonymous=None, file_limit_size=None, clien
     return {"status": "success", "message": "config updated"}
 
 
-def health_check():
-    """
-    系统健康检查
-
-    Returns:
-        dict: 包含服务状态的字典
-    """
-    app_logger.debug("Health check endpoint accessed")
-    return {"status": "ok"}
-
-
 def calculate_statistics(username):
     """
     计算文件统计信息

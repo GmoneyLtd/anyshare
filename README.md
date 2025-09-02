@@ -8,6 +8,8 @@ anyShare 是一个用 Python 和 Bottle 构建的轻量级文件分享解决方�
 
 - **多用户支持**: 支持管理员和普通用户角色，保障文件隔离与安全。
 - **文件上传**: 提供直观的拖拽或点击选择方式上传文件。
+- **大文件支持**: 实现分片上传与断点续传，轻松应对大文件传输场景。
+- **高效下载**: 支持范围请求（Range requests），实现分片下载与下载任务恢复。
 - **安全分享**: 自动为每个文件生成唯一的分享链接和6位随机访问密码。
 - **自动过期**: 可为文件设置过期时间（1小时、1天、1周、1个月或永久），过期文件将自动清理。
 - **管理员后台**:
@@ -113,9 +115,11 @@ anyShare/
 ├── pyproject.toml        # Python 项目依赖定义
 ├── uv.lock               # 依赖版本锁定文件
 ├── services/             # 业务逻辑层
+│   ├── chunk_upload_service.py
 │   ├── database_service.py
 │   ├── file_service.py
 │   ├── logger_service.py
+│   ├── range_download_service.py
 │   ├── system_service.py
 │   └── user_service.py
 ├── static/               # 静态资源 (CSS, JS, etc.)
