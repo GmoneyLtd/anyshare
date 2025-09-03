@@ -1,4 +1,5 @@
 import os
+import urllib.parse
 from datetime import datetime
 
 from bottle import Bottle, redirect, request, response, static_file, template
@@ -319,6 +320,7 @@ def get_file_info():
     如果文件不存在或已过期, 显示错误信息。如果密码正确, 提供文件下载。
     如果未提供密码或密码错误, 提示用户输入正确的密码。
     """
+
     # 从查询参数中获取文件哈希和密码
     file_hash = request.query.get("hash")
     password = request.query.get("pwd")
@@ -331,18 +333,45 @@ def get_file_info():
     # 获取客户端IP
     client_ip = request.headers.get("x-forwarded-for", request.remote_addr)
 
+    app_logger.debug(f"File download request received: hash={file_hash}, pwd={password}, Client-IP: {client_ip}")
+
     # 调用文件服务模块处理下载
     result = download_file(file_hash, password, client_ip, config.UPLOAD_FOLDER)
 
+    app_logger.debug(f"File service result: {result}")
+
     if result["status"] == "success":
-        file_on_disk = os.path.basename(result["file_path"])
+        file_path = result["file_path"]
         file_name = result["file_name"]
 
-        # 记录下载日志
-        app_logger.info(f"File download started: '{file_name}', hash: {file_hash}, Client-IP: {client_ip}")
+        app_logger.info(f"File download starting: '{file_name}', hash: {file_hash}, Client-IP: {client_ip}")
 
-        # 直接返回文件下载
-        return static_file(file_on_disk, root=config.UPLOAD_FOLDER, download=file_name)
+        # 确保文件名正确编码, 避免特殊字符问题
+        encoded_filename = urllib.parse.quote(file_name.encode("utf-8"))
+
+        # 使用流式响应下载文件
+        def stream():
+            with open(file_path, "rb") as f:
+                while True:
+                    data = f.read(8192)  # 8KB缓冲区
+                    if not data:
+                        break
+                    yield data
+
+        # 设置响应头
+        response.content_type = "application/octet-stream"
+        # 设置Content-Disposition头确保文件直接下载而不是在浏览器中显示
+        response.set_header("Content-Disposition", f"attachment; filename*=UTF-8''{encoded_filename}")
+        response.set_header("Cache-Control", "no-cache, no-store, must-revalidate")
+        response.set_header("Pragma", "no-cache")
+        response.set_header("Expires", "0")
+        response.set_header("X-Content-Type-Options", "nosniff")
+        response.set_header("Content-Length", str(os.path.getsize(file_path)))
+
+        app_logger.info(
+            f"Response headers set: Content-Type={response.content_type}, Content-Disposition={response.headers['Content-Disposition']}"
+        )
+        return stream()
     elif result["status"] == "password_required":
         # 确定用户角色
         username = request.get_cookie("username", secret=config.COOKIE_SECRET) or "anonymous"
