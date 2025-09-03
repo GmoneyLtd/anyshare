@@ -134,7 +134,7 @@ def upload_chunk(session_id, chunk_index, chunk_data, user_info, client_ip):
             # 更新会话状态
             update_upload_session(session_id, uploaded_chunks=uploaded_chunks_str)
 
-            app_logger.info(
+            app_logger.debug(
                 f"Chunk uploaded successfully: session {session_id}, chunk {chunk_index}, size: {len(chunk_data)}, user: {username}, Client-IP: {client_ip}"
             )
 
