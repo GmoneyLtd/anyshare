@@ -211,23 +211,57 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // 移除分片下载相关的事件监听器，让下载链接正常工作
-    // // 为下载链接添加分片下载功能
-    // const downloadLinks = document.querySelectorAll('a[href*="/file?hash="]');
-    // downloadLinks.forEach(link => {
-    //     link.addEventListener('click', function(e) {
-    //         e.preventDefault();
-    //         
-    //         const url = new URL(this.href);
-    //         const fileHash = url.searchParams.get('hash');
-    //         const password = url.searchParams.get('pwd');
-    //         
-    //         if (!fileHash) return;
-    //         
-    //         console.log('Starting file download for file:', fileHash);
-    //         
-    //         // 直接触发文件下载，不再显示进度条
-    //         // 移除分片下载相关的代码和进度条
-    //     });
-    // });
+    // 为下载链接添加异步下载功能，更新下载次数
+    const downloadLinks = document.querySelectorAll('a[href*="/file?hash="]');
+    downloadLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const url = this.href;
+            const fileHash = new URL(url).searchParams.get('hash');
+            
+            if (!fileHash) return;
+            
+            // 创建隐藏的iframe来触发下载
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            iframe.src = url;
+            document.body.appendChild(iframe);
+            
+            // 延迟移除iframe
+            setTimeout(() => {
+                document.body.removeChild(iframe);
+            }, 1000);
+            
+            // 更新下载次数显示
+            updateDownloadCount(fileHash);
+        });
+    });
 });
+
+// 更新文件下载次数的函数
+function updateDownloadCount(fileHash) {
+    // 查找并更新对应行的下载次数
+    const rows = document.querySelectorAll('.files-table tbody tr');
+    for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const hashElement = row.querySelector('.file-hash-value');
+        if (hashElement && hashElement.textContent === `(${fileHash})`) {
+            const downloadElement = row.querySelector('.file-downloads');
+            if (downloadElement) {
+                const currentCount = parseInt(downloadElement.textContent) || 0;
+                downloadElement.textContent = currentCount + 1;
+            }
+            break;
+        }
+    }
+    
+    // 同样更新卡片视图中的下载次数（如果存在）
+    const cards = document.querySelectorAll('.file-card');
+    cards.forEach(card => {
+        const hashElement = card.querySelector('.file-hash-value');
+        if (hashElement && hashElement.textContent.includes(fileHash.substring(0, 8))) {
+            // 注意：卡片视图中没有显示下载次数，所以这里不需要更新
+        }
+    });
+}
