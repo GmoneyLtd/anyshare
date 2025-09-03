@@ -92,7 +92,7 @@ def upload_file(file_data, user_info, client_ip, file_limit_size, upload_folder)
         return {"status": "error", "message": f"An error occurred: {str(e)}"}
 
 
-def download_file(file_hash, password, client_ip, upload_folder):
+def download_file(file_hash, password, client_ip, upload_folder, update_download_count=True):
     """
     处理文件下载业务逻辑
 
@@ -101,6 +101,7 @@ def download_file(file_hash, password, client_ip, upload_folder):
         password: 文件密码
         client_ip: 客户端IP
         upload_folder: 上传文件夹路径
+        update_download_count: 是否更新下载次数
 
     Returns:
         dict: 包含下载状态和文件信息的字典
@@ -127,10 +128,12 @@ def download_file(file_hash, password, client_ip, upload_folder):
     # 如果提供了密码, 检查密码是否正确
     if password:
         if password == file_info["password"]:
-            app_logger.info(
-                f"File download started: '{file_info['file_name']}', hash: {file_hash}, Client-IP: {client_ip}"
-            )
-            db_update_downloads(file_hash)
+            # 只在需要时更新下载次数和输出日志
+            if update_download_count:
+                app_logger.info(
+                    f"File download started: '{file_info['file_name']}', hash: {file_hash}, Client-IP: {client_ip}"
+                )
+                db_update_downloads(file_hash)
             file_path = os.path.join(upload_folder, file_hash)
             if os.path.exists(file_path):
                 return {"status": "success", "file_path": file_path, "file_name": file_info["file_name"]}

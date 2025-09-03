@@ -16,6 +16,9 @@ from services.database_service import (
     get_user,
     get_user_files,
 )
+from services.database_service import (
+    update_downloads as db_update_downloads,
+)
 from services.file_service import delete_file, download_file, update_file_expiry, upload_file
 from services.logger_service import get_logger
 from services.system_service import (
@@ -254,8 +257,12 @@ def get_file_info():
     # 获取客户端IP
     client_ip = request.headers.get("x-forwarded-for", request.remote_addr)
 
+    # 检查是否需要更新下载次数
+    update_download_count = request.headers.get("X-Update-Download-Count") == "true"
+    
     # 调用文件服务模块处理下载
-    result = download_file(file_hash, password, client_ip, config.UPLOAD_FOLDER)
+    # 对于分片下载，通过X-Update-Download-Count头部控制；对于传统下载，在路由中处理
+    result = download_file(file_hash, password, client_ip, config.UPLOAD_FOLDER, update_download_count=False)
 
     if result["status"] == "success":
         file_on_disk = os.path.basename(result["file_path"])
@@ -323,6 +330,15 @@ def get_file_info():
                 pass
 
         # 返回完整文件
+        # 如果是完整下载（非HEAD请求且没有Range头），则更新下载次数
+        # 或者如果是分片下载的最终请求（有X-Update-Download-Count头部），也更新下载次数
+        if (request.method != "HEAD" and not range_header) or update_download_count:
+            db_update_downloads(file_hash)
+            if update_download_count:
+                app_logger.info(f"Chunked download completed for file: {file_name}, hash: {file_hash}, Client-IP: {client_ip}")
+            else:
+                app_logger.info(f"Full download completed for file: {file_name}, hash: {file_hash}, Client-IP: {client_ip}")
+        
         return static_file(file_on_disk, root=config.UPLOAD_FOLDER, download=file_name)
     elif result["status"] == "password_required":
         # 确定用户角色

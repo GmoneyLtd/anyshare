@@ -60,6 +60,9 @@ class ChunkDownloader {
             // 清除下载进度
             this.clearDownloadProgress();
             
+            // 更新下载次数（只在完整下载完成时）
+            await this.updateDownloadCount();
+            
             // 触发成功回调
             this.onSuccess({
                 blob: blob,
@@ -71,6 +74,25 @@ class ChunkDownloader {
             console.error('ChunkDownloader: Download failed:', error);
             this.isDownloading = false;
             this.onError(error);
+        }
+    }
+
+    // 更新下载次数
+    async updateDownloadCount() {
+        try {
+            const url = `/file?hash=${this.fileHash}&pwd=${this.password}`;
+            const response = await fetch(url, { 
+                method: 'GET',
+                headers: {
+                    'X-Update-Download-Count': 'true'
+                }
+            });
+            
+            if (response.ok) {
+                console.log('ChunkDownloader: Download count updated');
+            }
+        } catch (error) {
+            console.error('ChunkDownloader: Failed to update download count:', error);
         }
     }
 
