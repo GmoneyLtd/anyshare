@@ -344,7 +344,7 @@ def get_file_info():
         file_path = result["file_path"]
         file_name = result["file_name"]
 
-        app_logger.info(f"File download started: '{file_name}', hash: {file_hash}, Client-IP: {client_ip}")
+        app_logger.info(f"File download starting: '{file_name}', hash: {file_hash}, Client-IP: {client_ip}")
 
         # 确保文件名正确编码, 避免特殊字符问题
         encoded_filename = urllib.parse.quote(file_name.encode("utf-8"))
