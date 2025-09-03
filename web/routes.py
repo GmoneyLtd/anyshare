@@ -16,9 +16,6 @@ from services.database_service import (
     get_user,
     get_user_files,
 )
-from services.database_service import (
-    update_downloads as db_update_downloads,
-)
 from services.file_service import delete_file, download_file, update_file_expiry, upload_file
 from services.logger_service import get_logger
 from services.system_service import (
@@ -342,9 +339,7 @@ def get_file_info():
         file_name = result["file_name"]
 
         # 记录下载日志
-        app_logger.info(
-            f"File download started: '{file_name}', hash: {file_hash}, Client-IP: {client_ip}"
-        )
+        app_logger.info(f"File download started: '{file_name}', hash: {file_hash}, Client-IP: {client_ip}")
 
         # 直接返回文件下载
         return static_file(file_on_disk, root=config.UPLOAD_FOLDER, download=file_name)
@@ -377,6 +372,7 @@ def get_file_info():
             return template("views/error.html", message=result["message"])
     else:
         return template("views/error.html", message="Unknown error occurred")
+
 
 # 处理密码提交
 @app.route("/verify", method="POST")

@@ -132,7 +132,7 @@ def download_file(file_hash, password, client_ip, upload_folder):
                 f"File download started: '{file_info['file_name']}', hash: {file_hash}, Client-IP: {client_ip}"
             )
             db_update_downloads(file_hash)
-            
+
             file_path = os.path.join(upload_folder, file_hash)
             if os.path.exists(file_path):
                 return {"status": "success", "file_path": file_path, "file_name": file_info["file_name"]}
