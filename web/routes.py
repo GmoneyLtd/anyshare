@@ -338,13 +338,11 @@ def get_file_info():
     # 调用文件服务模块处理下载
     result = download_file(file_hash, password, client_ip, config.UPLOAD_FOLDER)
 
-    app_logger.debug(f"File service result: {result}")
-
     if result["status"] == "success":
         file_path = result["file_path"]
         file_name = result["file_name"]
 
-        app_logger.info(f"File download starting: '{file_name}', hash: {file_hash}, Client-IP: {client_ip}")
+        app_logger.info(f"File service result: {result}")
 
         # 确保文件名正确编码, 避免特殊字符问题
         encoded_filename = urllib.parse.quote(file_name.encode("utf-8"))
@@ -352,13 +350,19 @@ def get_file_info():
         # 使用流式响应下载文件
         def stream():
             try:
+                app_logger.debug(f"Starting file stream for: '{file_name}', hash: {file_hash}, Client-IP: {client_ip}")
+                bytes_sent = 0
                 with open(file_path, "rb") as f:
                     while True:
                         data = f.read(8192)  # 8KB缓冲区
                         if not data:
                             break
+                        bytes_sent += len(data)
                         yield data
-                app_logger.info(f"File download completed: '{file_name}', hash: {file_hash}, Client-IP: {client_ip}")
+
+                app_logger.info(
+                    f"File download completed: '{file_name}', hash: {file_hash}, size: {bytes_sent} bytes, Client-IP: {client_ip}"
+                )
             except Exception as e:
                 app_logger.error(
                     f"Error during file download: '{file_name}', hash: {file_hash}, error: {str(e)}, Client-IP: {client_ip}"

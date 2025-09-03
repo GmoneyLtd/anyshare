@@ -129,7 +129,7 @@ def download_file(file_hash, password, client_ip, upload_folder):
         if password == file_info["password"]:
             # 更新下载次数和输出日志
             app_logger.info(
-                f"File download started: '{file_info['file_name']}', hash: {file_hash}, Client-IP: {client_ip}"
+                f"Recevied file download request: '{file_info['file_name']}', hash: {file_hash}, Client-IP: {client_ip}"
             )
             db_update_downloads(file_hash)
 

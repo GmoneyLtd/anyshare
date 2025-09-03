@@ -46,7 +46,7 @@ def start_server(config_obj, app_logger):
         app,
         host=config_obj.HOST,
         port=config_obj.PORT,
-        channel_timeout=60,
+        channel_timeout=300,  # 增加到300秒(5分钟)以支持大文件下载
         ident="[AnyShare]",
         threads=config_obj.THREADS,
         trusted_proxy="*",
