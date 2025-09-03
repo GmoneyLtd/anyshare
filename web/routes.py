@@ -333,7 +333,7 @@ def get_file_info():
     # 获取客户端IP
     client_ip = request.headers.get("x-forwarded-for", request.remote_addr)
 
-    app_logger.debug(f"File download request received: hash={file_hash}, pwd={password}, Client-IP: {client_ip}")
+    app_logger.info(f"File download request received: hash={file_hash}, pwd={password}, Client-IP: {client_ip}")
 
     # 调用文件服务模块处理下载
     result = download_file(file_hash, password, client_ip, config.UPLOAD_FOLDER)
@@ -344,19 +344,26 @@ def get_file_info():
         file_path = result["file_path"]
         file_name = result["file_name"]
 
-        app_logger.info(f"File download starting: '{file_name}', hash: {file_hash}, Client-IP: {client_ip}")
+        app_logger.info(f"File download started: '{file_name}', hash: {file_hash}, Client-IP: {client_ip}")
 
         # 确保文件名正确编码, 避免特殊字符问题
         encoded_filename = urllib.parse.quote(file_name.encode("utf-8"))
 
         # 使用流式响应下载文件
         def stream():
-            with open(file_path, "rb") as f:
-                while True:
-                    data = f.read(8192)  # 8KB缓冲区
-                    if not data:
-                        break
-                    yield data
+            try:
+                with open(file_path, "rb") as f:
+                    while True:
+                        data = f.read(8192)  # 8KB缓冲区
+                        if not data:
+                            break
+                        yield data
+                app_logger.info(f"File download completed: '{file_name}', hash: {file_hash}, Client-IP: {client_ip}")
+            except Exception as e:
+                app_logger.error(
+                    f"Error during file download: '{file_name}', hash: {file_hash}, error: {str(e)}, Client-IP: {client_ip}"
+                )
+                raise
 
         # 设置响应头
         response.content_type = "application/octet-stream"
@@ -368,7 +375,7 @@ def get_file_info():
         response.set_header("X-Content-Type-Options", "nosniff")
         response.set_header("Content-Length", str(os.path.getsize(file_path)))
 
-        app_logger.info(
+        app_logger.debug(
             f"Response headers set: Content-Type={response.content_type}, Content-Disposition={response.headers['Content-Disposition']}"
         )
         return stream()
