@@ -334,6 +334,9 @@ def get_file_info():
     # 获取客户端IP
     client_ip = request.headers.get("x-forwarded-for", request.remote_addr)
 
+    # 检查是否是分片下载请求
+    range_header = request.headers.get("Range")
+
     # 检查是否需要更新下载次数
     update_download_count = request.headers.get("X-Update-Download-Count") == "true"
 
@@ -360,9 +363,6 @@ def get_file_info():
             response.headers["Content-Disposition"] = f'attachment; filename="{file_name}"'
             response.headers["Accept-Ranges"] = "bytes"
             return ""
-
-        # 检查是否有Range请求头(断点续传)
-        range_header = request.headers.get("Range")
 
         if range_header:
             # 解析Range头
@@ -452,6 +452,25 @@ def get_file_info():
             return template("views/error.html", message=result["message"])
     else:
         return template("views/error.html", message="Unknown error occurred")
+
+
+# 新增分片下载路由
+@app.route("/chunked-download")
+def chunked_download():
+    """
+    专门用于分片下载的路由, 支持直接在浏览器地址栏输入链接时触发分片下载
+    """
+    # 从查询参数中获取文件哈希和密码
+    file_hash = request.query.get("hash")
+    password = request.query.get("pwd")
+
+    # 如果没有文件哈希, 则重定向到主页
+    if not file_hash:
+        app_logger.warning("Chunked download requested without hash, redirect to index.")
+        return redirect("/")
+
+    # 渲染一个简单的HTML页面, 该页面会自动触发分片下载
+    return template("views/chunked_download.html", file_hash=file_hash, password=password)
 
 
 # 处理密码提交

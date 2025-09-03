@@ -254,7 +254,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // 为下载链接添加分片下载功能
-    const downloadLinks = document.querySelectorAll('a[href*="/file?hash="]');
+    const downloadLinks = document.querySelectorAll('a[href*="/chunked-download?hash="]');
     downloadLinks.forEach(link => {
         link.addEventListener('click', function(e) {
             e.preventDefault();

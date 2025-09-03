@@ -66,10 +66,10 @@
                 </h2>
 
                 <div class="link-field">
-                    <input type="text" readonly id="public-link" value="/file?hash={{file_info['file_hash']}}">
+                    <input type="text" readonly id="public-link" value="/chunked-download?hash={{file_info['file_hash']}}">
 
                     <div class="link-actions">
-                        <a href="/file?hash={{file_info['file_hash']}}" class="btn btn-action">
+                        <a href="/chunked-download?hash={{file_info['file_hash']}}" class="btn btn-action">
                             <span aria-hidden="true" class="matsym">open_in_new</span>
                             <span>Open</span>
                         </a>
@@ -90,10 +90,10 @@
 
                 <div class="link-field">
                     <input type="text" readonly id="protected-link"
-                        value="/file?hash={{file_info['file_hash']}}&pwd={{file_info['password']}}">
+                        value="/chunked-download?hash={{file_info['file_hash']}}&pwd={{file_info['password']}}">
 
                     <div class="link-actions">
-                        <a href="/file?hash={{file_info['file_hash']}}&pwd={{file_info['password']}}"
+                        <a href="/chunked-download?hash={{file_info['file_hash']}}&pwd={{file_info['password']}}"
                             class="btn btn-action">
                             <span aria-hidden="true" class="matsym">open_in_new</span>
                             <span>Open</span>
