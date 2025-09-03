@@ -18,7 +18,7 @@ WORKDIR /app
 COPY --from=builder /app /app
 # 创建相关文件夹并保证权限属于 appuser
 RUN addgroup -S -g 1000 appuser && adduser -S -u 1000 appuser -G appuser && \
-    mkdir -p /app/log /app/upload && \
+    mkdir -p /app/log /app/upload /app/upload/temp && \
     chown -R appuser:appuser /app
 USER appuser
 # 设置环境变量，使用 `.venv` 作为虚拟环境及服务相关配置
