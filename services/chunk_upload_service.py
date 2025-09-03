@@ -161,7 +161,7 @@ def upload_chunk(session_id, chunk_index, chunk_data, user_info, client_ip):
         return {"status": "error", "message": f"Upload chunk failed: {str(e)}"}
 
 
-def complete_chunk_upload(session_id, user_info, client_ip, upload_folder):
+def complete_chunk_upload(session_id, user_info, client_ip, upload_folder, expiry_option=None):
     """
     完成分片上传, 合并文件
 
@@ -170,6 +170,7 @@ def complete_chunk_upload(session_id, user_info, client_ip, upload_folder):
         user_info: 用户信息
         client_ip: 客户端IP
         upload_folder: 上传文件夹路径
+        expiry_option: 过期时间选项
 
     Returns:
         dict: 包含完成状态和文件信息的字典
@@ -234,8 +235,15 @@ def complete_chunk_upload(session_id, user_info, client_ip, upload_folder):
             )
             return {"status": "error", "message": "File size mismatch"}
 
-        # 默认过期时间1天
-        expiry_date = datetime.now(UTC) + timedelta(days=1)
+        # 根据过期选项计算过期时间
+        expiry_map = {
+            "1 hour": datetime.now(UTC) + timedelta(hours=1),
+            "1 day": datetime.now(UTC) + timedelta(days=1),
+            "1 week": datetime.now(UTC) + timedelta(weeks=1),
+            "1 month": datetime.now(UTC) + timedelta(days=30),
+            "forever": datetime.now(UTC) + timedelta(days=365 * 10),
+        }
+        expiry_date = expiry_map.get(expiry_option, datetime.now(UTC) + timedelta(days=1))
 
         # 保存到数据库
         password = db_add_file(session["file_name"], file_hash, session["file_size"], expiry_date, client_ip, username)
@@ -251,7 +259,7 @@ def complete_chunk_upload(session_id, user_info, client_ip, upload_folder):
         # delete_upload_session(session_id)
 
         app_logger.info(
-            f"Chunk upload completed successfully: session {session_id}, file: {session['file_name']}, hash: {file_hash}, size: {session['file_size']}, user: {username}, Client-IP: {client_ip}"
+            f"Chunk upload completed successfully: session {session_id}, file: {session['file_name']}, hash: {file_hash}, size: {session['file_size']}, expiry: {expiry_option}, user: {username}, Client-IP: {client_ip}"
         )
 
         return {

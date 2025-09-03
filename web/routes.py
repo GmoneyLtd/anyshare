@@ -267,6 +267,16 @@ def get_file_info():
         # 获取文件大小
         file_size = os.path.getsize(file_path)
 
+        # 检查是否是HEAD请求
+        if request.method == "HEAD":
+            # 只返回头部信息
+            app_logger.info(f"HEAD request for file: {file_name}, size: {file_size}, Client-IP: {client_ip}")
+            response.headers["Content-Length"] = str(file_size)
+            response.headers["Content-Type"] = "application/octet-stream"
+            response.headers["Content-Disposition"] = f'attachment; filename="{file_name}"'
+            response.headers["Accept-Ranges"] = "bytes"
+            return ""
+
         # 检查是否有Range请求头(断点续传)
         range_header = request.headers.get("Range")
 
@@ -276,6 +286,8 @@ def get_file_info():
                 range_match = range_header.replace("bytes=", "").split("-")
                 start = int(range_match[0]) if range_match[0] else 0
                 end = int(range_match[1]) if range_match[1] else file_size - 1
+
+                app_logger.info(f"Range request for file: {file_name}, range: {start}-{end}/{file_size}, Client-IP: {client_ip}")
 
                 # 验证范围
                 if start >= file_size or end >= file_size or start > end:
@@ -826,12 +838,13 @@ def complete_chunk_upload_route():
 
     # 获取请求参数
     session_id = request.forms.get("session_id")
+    expiry_option = request.forms.get("expiry_option", "1 day")
 
     if not session_id:
         return {"status": "error", "message": "Missing session_id"}
 
     # 完成分片上传
-    result = complete_chunk_upload(session_id, user_info, client_ip, config.UPLOAD_FOLDER)
+    result = complete_chunk_upload(session_id, user_info, client_ip, config.UPLOAD_FOLDER, expiry_option)
     return result
 
 

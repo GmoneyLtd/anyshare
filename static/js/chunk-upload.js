@@ -23,8 +23,9 @@ class ChunkUploader {
         this.onCancel = options.onCancel || (() => { });
     }
 
-    async uploadFile(file) {
+    async uploadFile(file, expiryOption = '1 day') {
         this.file = file;
+        this.expiryOption = expiryOption;
         this.totalChunks = Math.ceil(file.size / this.chunkSize);
         this.uploadedChunks.clear();
         this.failedChunks.clear();
@@ -190,6 +191,7 @@ class ChunkUploader {
     async completeUpload() {
         const formData = new FormData();
         formData.append('session_id', this.sessionId);
+        formData.append('expiry_option', this.expiryOption);
 
         const response = await fetch('/api/chunk/complete', {
             method: 'POST',
