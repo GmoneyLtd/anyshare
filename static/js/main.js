@@ -253,80 +253,81 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // 为下载链接添加分片下载功能
-    const downloadLinks = document.querySelectorAll('a[href*="/chunked-download?hash="]');
-    downloadLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            const url = new URL(this.href);
-            const fileHash = url.searchParams.get('hash');
-            const password = url.searchParams.get('pwd');
-            
-            if (!fileHash) return;
-            
-            console.log('Starting chunk download for file:', fileHash);
-            
-            // 创建下载进度显示元素
-            const progressContainer = document.createElement('div');
-            progressContainer.className = 'download-progress';
-            progressContainer.style.cssText = `
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                background: white;
-                border: 1px solid #ccc;
-                border-radius: 2px;
-                padding: 10px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                z-index: 1000;
-                min-width: 300px;
-            `;
-            
-            progressContainer.innerHTML = `
-                <h3>下载进度</h3>
-                <div class="progress-bar" style="width: 100%; height: 20px; background: #f0f0f0; border-radius: 2px; overflow: hidden; margin: 10px 0;">
-                    <div class="progress-fill" style="width: 0%; height: 100%; background:rgb(233, 93, 114); transition: width 0.3s;"></div>
-                </div>
-                <div class="progress-text" style="text-align: center; margin: 10px 0;">0%</div>
-            `;
-            
-            document.body.appendChild(progressContainer);
-            
-            const progressFill = progressContainer.querySelector('.progress-fill');
-            const progressText = progressContainer.querySelector('.progress-text');
-            
-            // 对于大文件，使用分片下载
-            const chunkDownloader = new ChunkDownloader({
-                chunkSize: 1024 * 1024, // 1MB chunks
-                maxConcurrent: 3,
-                maxRetries: 3,
-                retryDelay: 1000,
-                onProgress: function(progress) {
-                    console.log(`Download progress: ${Math.round(progress.progress)}%`);
-                    progressFill.style.width = progress.progress + '%';
-                    progressText.textContent = `${Math.round(progress.progress)}%`;
-                },
-                onSuccess: function(result) {
-                    console.log('Download completed successfully:', result);
-                    progressContainer.remove();
-                    // 创建下载链接并触发下载
-                    chunkDownloader.createDownloadLink(result.blob, result.fileName);
-                },
-                onError: function(error) {
-                    console.error('Download error:', error);
-                    progressContainer.remove();
-                    // 如果分片下载失败，回退到普通下载
-                    console.log('Falling back to normal download');
-                    window.open(link.href, '_blank');
-                }
-            });
-            
-            // 开始分片下载
-            chunkDownloader.downloadFile(fileHash, password);
-        });
-    });
+    // 移除分片下载相关的代码
+    // // 为下载链接添加分片下载功能
+    // const downloadLinks = document.querySelectorAll('a[href*="/chunked-download?hash="]');
+    // downloadLinks.forEach(link => {
+    //     link.addEventListener('click', function(e) {
+    //         e.preventDefault();
+    //         
+    //         const url = new URL(this.href);
+    //         const fileHash = url.searchParams.get('hash');
+    //         const password = url.searchParams.get('pwd');
+    //         
+    //         if (!fileHash) return;
+    //         
+    //         console.log('Starting chunk download for file:', fileHash);
+    //         
+    //         // 创建下载进度显示元素
+    //         const progressContainer = document.createElement('div');
+    //         progressContainer.className = 'download-progress';
+    //         progressContainer.style.cssText = `
+    //             position: fixed;
+    //             top: 50%;
+    //             left: 50%;
+    //             transform: translate(-50%, -50%);
+    //             background: white;
+    //             border: 1px solid #ccc;
+    //             border-radius: 2px;
+    //             padding: 10px;
+    //             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    //             z-index: 1000;
+    //             min-width: 300px;
+    //         `;
+    //         
+    //         progressContainer.innerHTML = `
+    //             <h3>下载进度</h3>
+    //             <div class="progress-bar" style="width: 100%; height: 20px; background: #f0f0f0; border-radius: 2px; overflow: hidden; margin: 10px 0;">
+    //                 <div class="progress-fill" style="width: 0%; height: 100%; background:rgb(233, 93, 114); transition: width 0.3s;"></div>
+    //             </div>
+    //             <div class="progress-text" style="text-align: center; margin: 10px 0;">0%</div>
+    //         `;
+    //         
+    //         document.body.appendChild(progressContainer);
+    //         
+    //         const progressFill = progressContainer.querySelector('.progress-fill');
+    //         const progressText = progressContainer.querySelector('.progress-text');
+    //         
+    //         // 对于大文件，使用分片下载
+    //         const chunkDownloader = new ChunkDownloader({
+    //             chunkSize: 1024 * 1024, // 1MB chunks
+    //             maxConcurrent: 3,
+    //             maxRetries: 3,
+    //             retryDelay: 1000,
+    //             onProgress: function(progress) {
+    //                 console.log(`Download progress: ${Math.round(progress.progress)}%`);
+    //                 progressFill.style.width = progress.progress + '%';
+    //                 progressText.textContent = `${Math.round(progress.progress)}%`;
+    //             },
+    //             onSuccess: function(result) {
+    //                 console.log('Download completed successfully:', result);
+    //                 progressContainer.remove();
+    //                 // 创建下载链接并触发下载
+    //                 chunkDownloader.createDownloadLink(result.blob, result.fileName);
+    //             },
+    //             onError: function(error) {
+    //                 console.error('Download error:', error);
+    //                 progressContainer.remove();
+    //                 // 如果分片下载失败，回退到普通下载
+    //                 console.log('Falling back to normal download');
+    //                 window.open(link.href, '_blank');
+    //             }
+    //         });
+    //         
+    //         // 开始分片下载
+    //         chunkDownloader.downloadFile(fileHash, password);
+    //     });
+    // });
 
 
 });

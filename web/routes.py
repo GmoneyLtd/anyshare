@@ -334,94 +334,19 @@ def get_file_info():
     # 获取客户端IP
     client_ip = request.headers.get("x-forwarded-for", request.remote_addr)
 
-    # 检查是否是分片下载请求
-    range_header = request.headers.get("Range")
-
-    # 检查是否需要更新下载次数
-    update_download_count = request.headers.get("X-Update-Download-Count") == "true"
-
     # 调用文件服务模块处理下载
-    # 对于分片下载, 通过X-Update-Download-Count头部控制; 对于传统下载, 在路由中处理
-    result = download_file(file_hash, password, client_ip, config.UPLOAD_FOLDER, update_download_count=False)
+    result = download_file(file_hash, password, client_ip, config.UPLOAD_FOLDER)
 
     if result["status"] == "success":
         file_on_disk = os.path.basename(result["file_path"])
-
-        # 支持断点续传的文件下载
-        file_path = result["file_path"]
         file_name = result["file_name"]
 
-        # 获取文件大小
-        file_size = os.path.getsize(file_path)
+        # 记录下载日志
+        app_logger.info(
+            f"File download started: '{file_name}', hash: {file_hash}, Client-IP: {client_ip}"
+        )
 
-        # 检查是否是HEAD请求
-        if request.method == "HEAD":
-            # 只返回头部信息
-            app_logger.info(f"HEAD request for file: {file_name}, size: {file_size}, Client-IP: {client_ip}")
-            response.headers["Content-Length"] = str(file_size)
-            response.headers["Content-Type"] = "application/octet-stream"
-            response.headers["Content-Disposition"] = f'attachment; filename="{file_name}"'
-            response.headers["Accept-Ranges"] = "bytes"
-            return ""
-
-        if range_header:
-            # 解析Range头
-            try:
-                range_match = range_header.replace("bytes=", "").split("-")
-                start = int(range_match[0]) if range_match[0] else 0
-                end = int(range_match[1]) if range_match[1] else file_size - 1
-
-                app_logger.info(
-                    f"Range request for file: {file_name}, range: {start}-{end}/{file_size}, Client-IP: {client_ip}"
-                )
-
-                # 验证范围
-                if start >= file_size or end >= file_size or start > end:
-                    response.status = 416  # Range Not Satisfiable
-                    response.headers["Content-Range"] = f"bytes */{file_size}"
-                    return "Range Not Satisfiable"
-
-                # 设置响应头
-                response.status = 206  # Partial Content
-                response.headers["Content-Range"] = f"bytes {start}-{end}/{file_size}"
-                response.headers["Accept-Ranges"] = "bytes"
-                response.headers["Content-Length"] = str(end - start + 1)
-                response.headers["Content-Type"] = "application/octet-stream"
-                response.headers["Content-Disposition"] = f'attachment; filename="{file_name}"'
-
-                # 读取指定范围的文件内容
-                def generate_partial_content():
-                    with open(file_path, "rb") as f:
-                        f.seek(start)
-                        remaining = end - start + 1
-                        while remaining > 0:
-                            chunk_size = min(8192, remaining)
-                            chunk = f.read(chunk_size)
-                            if not chunk:
-                                break
-                            remaining -= len(chunk)
-                            yield chunk
-
-                return generate_partial_content()
-
-            except (ValueError, IndexError):
-                # Range头格式错误, 返回完整文件
-                pass
-
-        # 返回完整文件
-        # 如果是完整下载(非HEAD请求且没有Range头), 则更新下载次数
-        # 或者如果是分片下载的最终请求(有X-Update-Download-Count头部), 也更新下载次数
-        if (request.method != "HEAD" and not range_header) or update_download_count:
-            db_update_downloads(file_hash)
-            if update_download_count:
-                app_logger.info(
-                    f"Chunked download completed for file: {file_name}, hash: {file_hash}, Client-IP: {client_ip}"
-                )
-            else:
-                app_logger.info(
-                    f"Full download completed for file: {file_name}, hash: {file_hash}, Client-IP: {client_ip}"
-                )
-
+        # 直接返回文件下载
         return static_file(file_on_disk, root=config.UPLOAD_FOLDER, download=file_name)
     elif result["status"] == "password_required":
         # 确定用户角色
@@ -452,26 +377,6 @@ def get_file_info():
             return template("views/error.html", message=result["message"])
     else:
         return template("views/error.html", message="Unknown error occurred")
-
-
-# 新增分片下载路由
-@app.route("/chunked-download")
-def chunked_download():
-    """
-    专门用于分片下载的路由, 支持直接在浏览器地址栏输入链接时触发分片下载
-    """
-    # 从查询参数中获取文件哈希和密码
-    file_hash = request.query.get("hash")
-    password = request.query.get("pwd")
-
-    # 如果没有文件哈希, 则重定向到主页
-    if not file_hash:
-        app_logger.warning("Chunked download requested without hash, redirect to index.")
-        return redirect("/")
-
-    # 渲染一个简单的HTML页面, 该页面会自动触发分片下载
-    return template("views/chunked_download.html", file_hash=file_hash, password=password)
-
 
 # 处理密码提交
 @app.route("/verify", method="POST")
