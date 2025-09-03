@@ -23,7 +23,7 @@ def setup_logger(log_folder: str, log_level: str = "INFO"):
     logger.add(
         sys.stdout,
         level=log_level,
-        format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <7}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
+        format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <7}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> | <level>{message}</level>",
         colorize=True,
     )
 
@@ -33,7 +33,7 @@ def setup_logger(log_folder: str, log_level: str = "INFO"):
         rotation="00:00",
         retention="7 days",
         level=log_level,
-        format="{time:YYYY-MM-DD HH:mm:ss} | {level: <7} | {name}:{function}:{line} - {message}",
+        format="{time:YYYY-MM-DD HH:mm:ss} | {level: <7} | {name}:{function}:{line} | {message}",
         encoding="utf-8",
         enqueue=True,
         backtrace=True,
