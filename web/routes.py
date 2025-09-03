@@ -49,6 +49,83 @@ config = Config()
 app_logger = get_logger()
 
 
+# HTTP错误处理路由 - 使用通配符处理所有4xx和5xx错误
+@app.error(400)
+def error_4xx(error):
+    """
+    处理所有4xx客户端错误
+
+    Args:
+        error: 错误对象
+
+    Returns:
+        渲染的4xx错误页面
+    """
+    status_code = error.status_code if hasattr(error, "status_code") else 400
+    error_messages = {
+        400: "400 Bad Request - 请求格式错误",
+        401: "401 Unauthorized - 未授权访问",
+        403: "403 Forbidden - 禁止访问",
+        404: "404 Not Found - 页面未找到",
+        405: "405 Method Not Allowed - 请求方法不允许",
+        408: "408 Request Timeout - 请求超时",
+        413: "413 Payload Too Large - 请求体过大",
+        414: "414 URI Too Long - 请求URI过长",
+        415: "415 Unsupported Media Type - 不支持的媒体类型",
+        429: "429 Too Many Requests - 请求过于频繁",
+    }
+    message = error_messages.get(status_code, f"{status_code} Client Error - 客户端错误")
+    app_logger.warning(
+        f"{status_code} Client Error: {error.body}, Client-IP: {request.headers.get('x-forwarded-for', request.remote_addr)}"
+    )
+    return template("views/error.html", message=message)
+
+
+@app.error(500)
+def error_5xx(error):
+    """
+    处理所有5xx服务器错误
+
+    Args:
+        error: 错误对象
+
+    Returns:
+        渲染的5xx错误页面
+    """
+    status_code = error.status_code if hasattr(error, "status_code") else 500
+    error_messages = {
+        500: "500 Internal Server Error - 服务器内部错误",
+        501: "501 Not Implemented - 功能未实现",
+        502: "502 Bad Gateway - 网关错误",
+        503: "503 Service Unavailable - 服务不可用",
+        504: "504 Gateway Timeout - 网关超时",
+        505: "505 HTTP Version Not Supported - HTTP版本不支持",
+    }
+    message = error_messages.get(status_code, f"{status_code} Server Error - 服务器错误")
+    app_logger.error(
+        f"{status_code} Server Error: {error.body}, Client-IP: {request.headers.get('x-forwarded-for', request.remote_addr)}"
+    )
+    return template("views/error.html", message=message)
+
+
+# 添加404错误处理(Bottle默认不处理404)
+@app.error(404)
+def error_404(error):
+    """
+    处理404 Not Found错误
+
+    Args:
+        error: 错误对象
+
+    Returns:
+        渲染的404错误页面
+    """
+    app_logger.warning(
+        f"404 Not Found error: {error.body}, Client-IP: {request.headers.get('x-forwarded-for', request.remote_addr)}"
+    )
+    return template("views/error.html", message="404 Not Found - 页面未找到")
+
+
 # 静态文件路由
 @app.route("/static/<filepath:path>")
 def server_static(filepath):
@@ -259,9 +336,9 @@ def get_file_info():
 
     # 检查是否需要更新下载次数
     update_download_count = request.headers.get("X-Update-Download-Count") == "true"
-    
+
     # 调用文件服务模块处理下载
-    # 对于分片下载，通过X-Update-Download-Count头部控制；对于传统下载，在路由中处理
+    # 对于分片下载, 通过X-Update-Download-Count头部控制; 对于传统下载, 在路由中处理
     result = download_file(file_hash, password, client_ip, config.UPLOAD_FOLDER, update_download_count=False)
 
     if result["status"] == "success":
@@ -294,7 +371,9 @@ def get_file_info():
                 start = int(range_match[0]) if range_match[0] else 0
                 end = int(range_match[1]) if range_match[1] else file_size - 1
 
-                app_logger.info(f"Range request for file: {file_name}, range: {start}-{end}/{file_size}, Client-IP: {client_ip}")
+                app_logger.info(
+                    f"Range request for file: {file_name}, range: {start}-{end}/{file_size}, Client-IP: {client_ip}"
+                )
 
                 # 验证范围
                 if start >= file_size or end >= file_size or start > end:
@@ -330,15 +409,19 @@ def get_file_info():
                 pass
 
         # 返回完整文件
-        # 如果是完整下载（非HEAD请求且没有Range头），则更新下载次数
-        # 或者如果是分片下载的最终请求（有X-Update-Download-Count头部），也更新下载次数
+        # 如果是完整下载(非HEAD请求且没有Range头), 则更新下载次数
+        # 或者如果是分片下载的最终请求(有X-Update-Download-Count头部), 也更新下载次数
         if (request.method != "HEAD" and not range_header) or update_download_count:
             db_update_downloads(file_hash)
             if update_download_count:
-                app_logger.info(f"Chunked download completed for file: {file_name}, hash: {file_hash}, Client-IP: {client_ip}")
+                app_logger.info(
+                    f"Chunked download completed for file: {file_name}, hash: {file_hash}, Client-IP: {client_ip}"
+                )
             else:
-                app_logger.info(f"Full download completed for file: {file_name}, hash: {file_hash}, Client-IP: {client_ip}")
-        
+                app_logger.info(
+                    f"Full download completed for file: {file_name}, hash: {file_hash}, Client-IP: {client_ip}"
+                )
+
         return static_file(file_on_disk, root=config.UPLOAD_FOLDER, download=file_name)
     elif result["status"] == "password_required":
         # 确定用户角色
