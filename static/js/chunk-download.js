@@ -11,15 +11,21 @@ class ChunkDownloader {
 
     async downloadFile(url, filename) {
         try {
-            // 获取文件大小
-            const headResponse = await fetch(url, { method: 'HEAD' });
-            const contentLength = headResponse.headers.get('Content-Length');
+            // 获取文件大小 - 使用一个不会触发下载计数的特殊端点
+            const headResponse = await fetch(`/api/file/${this.getFileHashFromUrl(url)}`);
             
-            if (!contentLength) {
+            if (!headResponse.ok) {
+                throw new Error('无法获取文件信息');
+            }
+            
+            const fileInfo = await headResponse.json();
+            const fileSize = fileInfo.file_size;
+            const filename = fileInfo.file_name;
+            
+            if (!fileSize) {
                 throw new Error('无法获取文件大小');
             }
             
-            const fileSize = parseInt(contentLength, 10);
             console.log(`文件大小: ${fileSize} bytes`);
             
             // 创建用于存储文件块的数组
@@ -57,6 +63,17 @@ class ChunkDownloader {
         } catch (error) {
             console.error('下载失败:', error);
             this.onError(error);
+        }
+    }
+
+    getFileHashFromUrl(url) {
+        try {
+            const urlObj = new URL(url);
+            const params = new URLSearchParams(urlObj.search);
+            return params.get('hash') || '';
+        } catch (e) {
+            console.error('解析URL失败:', e);
+            return '';
         }
     }
 

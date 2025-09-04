@@ -363,8 +363,6 @@ def get_file_info():
     # 获取客户端IP
     client_ip = request.headers.get("x-forwarded-for", request.remote_addr)
 
-    app_logger.info(f"File download request received: hash={file_hash}, pwd={password}, Client-IP: {client_ip}")
-
     # 调用文件服务模块处理下载
     result = download_file(file_hash, password, client_ip, config.UPLOAD_FOLDER)
 
@@ -398,11 +396,24 @@ def get_file_info():
                     response.set_header("Content-Range", f"bytes */{file_size}")
                     return
 
+                # 计算分片编号 (从0开始)
+                chunk_number = start // (2 * 1024 * 1024)  # 假设每个分片2MB
+
+                # 添加请求ID以区分并发请求
+                import uuid
+                request_id = str(uuid.uuid4())[:8]
+
+                # 只有在第一个分片请求时才更新下载次数
+                # 我们通过检查Range头来判断是否是第一个分片请求
+                if start == 0:
+                    from services.database_service import update_downloads as db_update_downloads
+                    db_update_downloads(file_hash)
+
                 # 读取指定范围的文件内容
                 def stream_range():
                     try:
-                        app_logger.debug(
-                            f"Starting file stream for, file_name: {file_name}, hash: {file_hash}, range: {start}-{end}, Client-IP: {client_ip}"
+                        app_logger.info(
+                            f"Starting chunk download for file: {file_name}, hash: {file_hash}, range: {start}-{end}, chunk: {chunk_number}, req_id: {request_id}, Client-IP: {client_ip}"
                         )
                         bytes_sent = 0
                         with open(file_path, "rb") as f:
@@ -415,14 +426,19 @@ def get_file_info():
                                     break
                                 bytes_sent += len(data)
                                 remaining -= len(data)
+                                # 只有在传输大量数据时才记录调试信息
+                                if bytes_sent % (8192 * 100) == 0:  # 每100个chunk记录一次
+                                    app_logger.debug(
+                                        f"Sending chunk data for file: {file_name}, hash: {file_hash}, chunk: {chunk_number}, bytes sent: {bytes_sent}, remaining: {remaining}, req_id: {request_id}, Client-IP: {client_ip}"
+                                    )
                                 yield data
 
                         app_logger.info(
-                            f"File chunk download completed, file_name: {file_name}, hash: {file_hash}, range: {start}-{end}, size: {bytes_sent} bytes, Client-IP: {client_ip}"
+                            f"Chunk download completed for file: {file_name}, hash: {file_hash}, range: {start}-{end}, chunk: {chunk_number}, size: {bytes_sent} bytes, req_id: {request_id}, Client-IP: {client_ip}"
                         )
                     except Exception as e:
                         app_logger.error(
-                            f"Error during file chunk download, file_name: {file_name}, hash: {file_hash}, error: {str(e)}, Client-IP: {client_ip}"
+                            f"Error during chunk download for file: {file_name}, hash: {file_hash}, chunk: {chunk_number}, req_id: {request_id}, error: {str(e)}, Client-IP: {client_ip}"
                         )
                         raise
 
@@ -445,40 +461,50 @@ def get_file_info():
                 # 如果处理Range请求出错, 回退到完整文件下载
                 pass
 
-        # 使用流式响应下载文件 (完整文件)
-        def stream():
-            try:
-                app_logger.info(f"Starting file download, file_name: {file_name}, hash: {file_hash}, Client-IP: {client_ip}")
-                bytes_sent = 0
-                with open(file_path, "rb") as f:
-                    while True:
-                        data = f.read(8192)  # 8KB缓冲区
-                        if not data:
-                            break
-                        bytes_sent += len(data)
-                        yield data
+        else:
+            # 完整文件下载，更新下载次数
+            from services.database_service import update_downloads as db_update_downloads
+            db_update_downloads(file_hash)
+            
+            # 使用流式响应下载文件 (完整文件)
+            def stream():
+                try:
+                    app_logger.info(f"Starting full file download for file: {file_name}, hash: {file_hash}, Client-IP: {client_ip}")
+                    bytes_sent = 0
+                    with open(file_path, "rb") as f:
+                        while True:
+                            data = f.read(8192)  # 8KB缓冲区
+                            if not data:
+                                break
+                            bytes_sent += len(data)
+                            # 只有在传输大量数据时才记录调试信息
+                            if bytes_sent % (8192 * 100) == 0:  # 每100个chunk记录一次
+                                app_logger.debug(
+                                    f"Sending data for full file download: {file_name}, hash: {file_hash}, bytes sent: {bytes_sent}, Client-IP: {client_ip}"
+                                )
+                            yield data
 
-                app_logger.info(
-                    f"File download completed(not chunk), file_name: {file_name}, hash: {file_hash}, size: {bytes_sent} bytes, Client-IP: {client_ip}"
-                )
-            except Exception as e:
-                app_logger.error(
-                    f"Error during file download, file_name: {file_name}, hash: {file_hash}, error: {str(e)}, Client-IP: {client_ip}"
-                )
-                raise
+                    app_logger.info(
+                        f"Full file download completed for file: {file_name}, hash: {file_hash}, size: {bytes_sent} bytes, Client-IP: {client_ip}"
+                    )
+                except Exception as e:
+                    app_logger.error(
+                        f"Error during full file download for file: {file_name}, hash: {file_hash}, error: {str(e)}, Client-IP: {client_ip}"
+                    )
+                    raise
 
-        # 设置响应头
-        response.content_type = "application/octet-stream"
-        # 设置Content-Disposition头确保文件直接下载而不是在浏览器中显示
-        response.set_header("Content-Disposition", f"attachment; filename*=UTF-8''{encoded_filename}")
-        response.set_header("Cache-Control", "no-cache, no-store, must-revalidate")
-        response.set_header("Pragma", "no-cache")
-        response.set_header("Expires", "0")
-        response.set_header("X-Content-Type-Options", "nosniff")
-        response.set_header("Accept-Ranges", "bytes")
-        response.set_header("Content-Length", str(os.path.getsize(file_path)))
+            # 设置响应头
+            response.content_type = "application/octet-stream"
+            # 设置Content-Disposition头确保文件直接下载而不是在浏览器中显示
+            response.set_header("Content-Disposition", f"attachment; filename*=UTF-8''{encoded_filename}")
+            response.set_header("Cache-Control", "no-cache, no-store, must-revalidate")
+            response.set_header("Pragma", "no-cache")
+            response.set_header("Expires", "0")
+            response.set_header("X-Content-Type-Options", "nosniff")
+            response.set_header("Accept-Ranges", "bytes")
+            response.set_header("Content-Length", str(os.path.getsize(file_path)))
 
-        return stream()
+            return stream()
     elif result["status"] == "password_required":
         # 确定用户角色
         username = request.get_cookie("username", secret=config.COOKIE_SECRET) or "anonymous"

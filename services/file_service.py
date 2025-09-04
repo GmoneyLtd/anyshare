@@ -6,7 +6,6 @@ from services.database_service import add_file as db_add_file
 from services.database_service import delete_expired_files as db_delete_expired_files
 from services.database_service import delete_file_from_db as db_delete_file
 from services.database_service import get_file as db_get_file
-from services.database_service import update_downloads as db_update_downloads
 from services.database_service import update_file_expiry as db_update_file_expiry
 from services.logger_service import get_logger
 from services.system_service import get_relative_time
@@ -128,9 +127,7 @@ def download_file(file_hash, password, client_ip, upload_folder):
     # 如果提供了密码, 检查密码是否正确
     if password:
         if password == file_info["password"]:
-            # 更新下载次数和输出日志
-            db_update_downloads(file_hash)
-
+            # 注意: 这里不再更新下载次数, 下载次数将在文件实际开始传输时更新
             file_path = os.path.join(upload_folder, file_hash)
             if os.path.exists(file_path):
                 return {"status": "success", "file_path": file_path, "file_name": file_info["file_name"]}
@@ -139,6 +136,8 @@ def download_file(file_hash, password, client_ip, upload_folder):
         else:
             app_logger.warning(f"Incorrect password provided for file: {file_hash}, Client-IP: {client_ip}")
             return {"status": "error", "message": "password error"}
+            
+    app_logger.info(f"File download request received: hash={file_hash}, pwd={password}, Client-IP: {client_ip}")
 
     return {"status": "password_required", "file_hash": file_hash}
 
