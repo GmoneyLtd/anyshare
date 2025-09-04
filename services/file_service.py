@@ -136,8 +136,6 @@ def download_file(file_hash, password, client_ip, upload_folder):
         else:
             app_logger.warning(f"Incorrect password provided for file: {file_hash}, Client-IP: {client_ip}")
             return {"status": "error", "message": "password error"}
-            
-    app_logger.info(f"File download request received: hash={file_hash}, pwd={password}, Client-IP: {client_ip}")
 
     return {"status": "password_required", "file_hash": file_hash}
 
