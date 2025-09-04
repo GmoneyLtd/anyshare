@@ -1135,14 +1135,10 @@ def api_get_file_info(file_hash):
     try:
         # 获取文件信息
         file_info = get_file(file_hash)
-        
+
         if file_info:
             # 只返回需要的信息
-            return {
-                "status": "success",
-                "file_name": file_info["file_name"],
-                "file_size": file_info["file_size"]
-            }
+            return {"status": "success", "file_name": file_info["file_name"], "file_size": file_info["file_size"]}
         else:
             return {"status": "error", "message": "File not found"}
     except Exception as e:
