@@ -161,7 +161,7 @@ def upload_chunk(session_id, chunk_index, chunk_data, user_info, client_ip):
         return {"status": "error", "message": f"Upload chunk failed: {str(e)}"}
 
 
-def complete_chunk_upload(session_id, user_info, client_ip, upload_folder, expiry_option=None):
+def complete_chunk_upload(session_id, user_info, client_ip, upload_folder, expiry_option=None, password=None):
     """
     完成分片上传, 合并文件
 
@@ -171,6 +171,7 @@ def complete_chunk_upload(session_id, user_info, client_ip, upload_folder, expir
         client_ip: 客户端IP
         upload_folder: 上传文件夹路径
         expiry_option: 过期时间选项
+        password: 文件密码(可选)
 
     Returns:
         dict: 包含完成状态和文件信息的字典
@@ -246,7 +247,9 @@ def complete_chunk_upload(session_id, user_info, client_ip, upload_folder, expir
         expiry_date = expiry_map.get(expiry_option, datetime.now(UTC) + timedelta(days=1))
 
         # 保存到数据库
-        password = db_add_file(session["file_name"], file_hash, session["file_size"], expiry_date, client_ip, username)
+        password = db_add_file(
+            session["file_name"], file_hash, session["file_size"], expiry_date, client_ip, username, password
+        )
 
         # 更新会话状态
         update_upload_session(session_id, file_hash=file_hash, status="completed")

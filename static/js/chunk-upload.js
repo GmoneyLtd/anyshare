@@ -23,9 +23,10 @@ class ChunkUploader {
         this.onCancel = options.onCancel || (() => { });
     }
 
-    async uploadFile(file, expiryOption = '1 day') {
+    async uploadFile(file, expiryOption = '1 day', password = null) {
         this.file = file;
         this.expiryOption = expiryOption;
+        this.password = password;
         this.totalChunks = Math.ceil(file.size / this.chunkSize);
         this.uploadedChunks.clear();
         this.failedChunks.clear();
@@ -56,6 +57,10 @@ class ChunkUploader {
             // 完成上传
             const completeResult = await this.completeUpload();
             if (completeResult.status === 'success') {
+                // 将密码添加到结果中
+                if (this.password) {
+                    completeResult.password = this.password;
+                }
                 this.onSuccess(completeResult);
             } else {
                 throw new Error(completeResult.message || 'Failed to complete upload');
@@ -192,6 +197,10 @@ class ChunkUploader {
         const formData = new FormData();
         formData.append('session_id', this.sessionId);
         formData.append('expiry_option', this.expiryOption);
+        // 如果有密码，也传递给后端
+        if (this.password) {
+            formData.append('password', this.password);
+        }
 
         const response = await fetch('/api/chunk/complete', {
             method: 'POST',

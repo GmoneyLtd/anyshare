@@ -1,6 +1,6 @@
 import os
 import urllib.parse
-from datetime import datetime
+from datetime import UTC, datetime
 
 from bottle import Bottle, redirect, request, response, static_file, template
 
@@ -260,9 +260,10 @@ def upload():
         app_logger.info(f"{username} are uploading file, Client-IP: {upload_ip}")
 
     upload_file_data = request.files.get("file")
+    password = request.forms.get("password")
 
     # 调用文件服务模块处理上传
-    result = upload_file(upload_file_data, user_info, upload_ip, config.FILE_LIMIT_SIZE, config.UPLOAD_FOLDER)
+    result = upload_file(upload_file_data, user_info, upload_ip, config.FILE_LIMIT_SIZE, config.UPLOAD_FOLDER, password)
     return result
 
 
@@ -276,21 +277,21 @@ def upload_success():
     # 从cookie中获取用户名并验证上传文件权限情况
     username = request.get_cookie("username", secret=config.COOKIE_SECRET) or "anonymous"
     # 获取URL参数中的文件信息字符串
-    file_hash = request.query.get("file_hash")
+    file_hash = request.query.get("hash")
     # 获取客户端IP(支持反向代理)
     upload_ip = request.headers.get("x-forwarded-for", request.remote_addr)
-    if file_hash:
-        if username == "anonymous" and config.ANONYMOUS == "false":
-            app_logger.warning(f"Unauthorized attempt to access upload page from IP: {upload_ip}")
-            return {"status": "error", "message": "unauthorized"}
-        elif username == "anonymous" and config.ANONYMOUS == "true":
-            app_logger.info(f"Anonymous access to upload page from IP: {upload_ip}")
-        else:
-            app_logger.info(f"{username} access to upload page from IP: {upload_ip}")
 
     # 如果没有文件hash信息, 则重定向到主页
-    else:
+    if not file_hash:
         return redirect("/")
+
+    if username == "anonymous" and config.ANONYMOUS == "false":
+        app_logger.warning(f"Unauthorized attempt to access upload page from IP: {upload_ip}")
+        return redirect("/login")
+    elif username == "anonymous" and config.ANONYMOUS == "true":
+        app_logger.info(f"Anonymous access to upload page from IP: {upload_ip}")
+    else:
+        app_logger.info(f"{username} access to upload page from IP: {upload_ip}")
 
     # 确定用户角色
     if username == "anonymous":
@@ -303,12 +304,41 @@ def upload_success():
             user_role = "user"
 
     try:
+        # 获取文件信息并验证密码
         file_info = get_file(file_hash)
-        # 直接使用解析后的文件信息渲染模板
+
+        # 如果文件不存在, 重定向到主页
+        if not file_info:
+            app_logger.warning(f"Attempt to access non-existent file: {file_hash}, Client-IP: {upload_ip}")
+            return redirect("/")
+
+        # 检查文件是否过期
+        expiry_date = file_info["expiry_date"]
+        # 如果expiry_date是字符串, 则先转换为datetime对象
+        if isinstance(expiry_date, str):
+            expiry_date = datetime.fromisoformat(expiry_date.replace("Z", "+00:00"))
+        if expiry_date < datetime.now(UTC):
+            app_logger.info(
+                f"Attempt to access expired file: {file_hash}, expired on: {expiry_date}, Client-IP: {upload_ip}"
+            )
+            return template("views/error.html", message="The file does not exist or has expired")
+
+        # 所有文件都有密码保护, 需要验证密码
+        # 检查是否提供了密码
+        password = request.query.get("pwd")
+        if not password:
+            # 如果没有提供密码, 显示密码输入页面
+            return template("views/password.html", file_hash=file_hash, error=None, user_role=user_role)
+        elif password != file_info["password"]:
+            # 如果密码错误, 显示密码错误页面
+            app_logger.warning(f"Incorrect password provided for file: {file_hash}, Client-IP: {upload_ip}")
+            return template("views/password.html", file_hash=file_hash, error="password error", user_role=user_role)
+
+        # 密码验证通过, 渲染上传成功页面
         return template("views/upload.html", file_info=file_info, user_role=user_role)
     except Exception as e:
         # 如果解析文件信息时发生错误, 渲染错误页面
-        return template("error.html", error=f"Error parsing file information: {str(e)}")
+        return template("error.html", message=f"Error parsing file information: {str(e)}")
 
 
 # 获取文件信息
@@ -347,7 +377,80 @@ def get_file_info():
         # 确保文件名正确编码, 避免特殊字符问题
         encoded_filename = urllib.parse.quote(file_name.encode("utf-8"))
 
-        # 使用流式响应下载文件
+        # 检查是否为分片下载请求 (Range请求头)
+        range_header = request.headers.get("Range", None)
+        if range_header:
+            # 处理分片下载
+            try:
+                # 解析Range头
+                range_match = range_header.strip().replace("bytes=", "").split("-")
+                start = int(range_match[0]) if range_match[0] else 0
+                end = int(range_match[1]) if range_match[1] else None
+
+                # 获取文件大小
+                file_size = os.path.getsize(file_path)
+
+                # 如果end未指定, 则设置为文件末尾
+                if end is None:
+                    end = file_size - 1
+
+                # 确保范围有效
+                if start >= file_size or end >= file_size:
+                    response.status = 416  # Range Not Satisfiable
+                    response.set_header("Content-Range", f"bytes */{file_size}")
+                    return
+
+                # 读取指定范围的文件内容
+                def stream_range():
+                    try:
+                        app_logger.debug(
+                            f"Starting file stream for: '{file_name}', hash: {file_hash}, range: {start}-{end}, Client-IP: {client_ip}"
+                        )
+                        bytes_sent = 0
+                        with open(file_path, "rb") as f:
+                            f.seek(start)
+                            remaining = end - start + 1
+                            while remaining > 0:
+                                chunk_size = min(8192, remaining)  # 8KB缓冲区或剩余大小
+                                data = f.read(chunk_size)
+                                if not data:
+                                    break
+                                bytes_sent += len(data)
+                                remaining -= len(data)
+                                yield data
+
+                        app_logger.info(
+                            f"File chunk download completed: '{file_name}', hash: {file_hash}, range: {start}-{end}, size: {bytes_sent} bytes, Client-IP: {client_ip}"
+                        )
+                    except Exception as e:
+                        app_logger.error(
+                            f"Error during file chunk download: '{file_name}', hash: {file_hash}, error: {str(e)}, Client-IP: {client_ip}"
+                        )
+                        raise
+
+                # 设置分片下载响应头
+                response.status = 206  # Partial Content
+                response.content_type = "application/octet-stream"
+                response.set_header("Content-Range", f"bytes {start}-{end}/{file_size}")
+                response.set_header("Content-Length", str(end - start + 1))
+                response.set_header("Accept-Ranges", "bytes")
+                # 设置Content-Disposition头确保文件直接下载而不是在浏览器中显示
+                response.set_header("Content-Disposition", f"attachment; filename*=UTF-8''{encoded_filename}")
+                response.set_header("Cache-Control", "no-cache, no-store, must-revalidate")
+                response.set_header("Pragma", "no-cache")
+                response.set_header("Expires", "0")
+                response.set_header("X-Content-Type-Options", "nosniff")
+
+                app_logger.debug(
+                    f"Response headers set for range request: Content-Type={response.content_type}, Content-Range={response.headers['Content-Range']}"
+                )
+                return stream_range()
+            except Exception as e:
+                app_logger.error(f"Error processing range request: {str(e)}")
+                # 如果处理Range请求出错, 回退到完整文件下载
+                pass
+
+        # 使用流式响应下载文件 (完整文件)
         def stream():
             try:
                 app_logger.debug(f"Starting file stream for: '{file_name}', hash: {file_hash}, Client-IP: {client_ip}")
@@ -377,6 +480,7 @@ def get_file_info():
         response.set_header("Pragma", "no-cache")
         response.set_header("Expires", "0")
         response.set_header("X-Content-Type-Options", "nosniff")
+        response.set_header("Accept-Ranges", "bytes")
         response.set_header("Content-Length", str(os.path.getsize(file_path)))
 
         app_logger.debug(
@@ -424,7 +528,7 @@ def verify_password():
     如果任一信息缺失, 将返回错误页面。否则, 将用户重定向到带有密码的文件链接。
     """
     # 获取用户提交的文件哈希值和密码
-    file_hash = request.forms.get("hash")
+    file_hash = request.forms.get("file_hash")
     password = request.forms.get("password")
 
     # 检查文件哈希值和密码是否都已提供
@@ -432,8 +536,8 @@ def verify_password():
         # 返回错误页面, 提示参数错误
         return template("views/error.html", message="parameter error")
 
-    # 重定向到带密码的文件链接
-    return redirect(f"/file?hash={file_hash}&pwd={password}")
+    # 重定向到upload页面, 而不是直接下载文件
+    return redirect(f"/upload?file_hash={file_hash}&pwd={password}")
 
 
 # 授权用户页面路由
@@ -898,12 +1002,13 @@ def complete_chunk_upload_route():
     # 获取请求参数
     session_id = request.forms.get("session_id")
     expiry_option = request.forms.get("expiry_option", "1 day")
+    password = request.forms.get("password")
 
     if not session_id:
         return {"status": "error", "message": "Missing session_id"}
 
     # 完成分片上传
-    result = complete_chunk_upload(session_id, user_info, client_ip, config.UPLOAD_FOLDER, expiry_option)
+    result = complete_chunk_upload(session_id, user_info, client_ip, config.UPLOAD_FOLDER, expiry_option, password)
     return result
 
 
@@ -1013,3 +1118,33 @@ def my_files_page():
 
     # 渲染用户文件页面模板
     return template("views/myfiles.html", files=files)
+
+
+# API接口: 获取文件信息
+@app.route("/api/file/<file_hash>", method="GET")
+def api_get_file_info(file_hash):
+    """
+    根据文件哈希值获取文件信息。
+
+    参数:
+    file_hash (str): 文件的哈希值。
+
+    返回:
+    dict: 包含文件信息的字典。
+    """
+    try:
+        # 获取文件信息
+        file_info = get_file(file_hash)
+        
+        if file_info:
+            # 只返回需要的信息
+            return {
+                "status": "success",
+                "file_name": file_info["file_name"],
+                "file_size": file_info["file_size"]
+            }
+        else:
+            return {"status": "error", "message": "File not found"}
+    except Exception as e:
+        app_logger.error(f"Error getting file info: {str(e)}")
+        return {"status": "error", "message": "Internal server error"}

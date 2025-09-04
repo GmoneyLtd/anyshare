@@ -7,6 +7,16 @@ document.addEventListener('DOMContentLoaded', function () {
     const fileSize = document.getElementById('fileSize');
     const uploadBtn = document.getElementById('uploadBtn');
 
+    // 生成随机密码的函数
+    function generatePassword() {
+        const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        let password = '';
+        for (let i = 0; i < 6; i++) {
+            password += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return password;
+    }
+
     // 显示消息函数
     function showMessage(message, type) {
         // 创建消息元素
@@ -156,6 +166,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             }
 
+            // 生成密码
+            const password = generatePassword();
+
             // 显示上传中状态
             uploadBtn.textContent = 'uploading...';
             uploadBtn.disabled = true;
@@ -174,8 +187,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 onSuccess: function(result) {
                     // 上传成功
                     showMessage('Upload completed successfully!', 'success');
-                    // 重定向到文件页面
-                    window.location.href = `/upload?file_hash=${result.file_hash}`;
+                    // 重定向到文件页面，包含文件哈希和密码
+                    if (result.file_hash) {
+                        window.location.href = `/upload?hash=${result.file_hash}&pwd=${password}`;
+                    } else {
+                        // 如果没有文件哈希信息，仍然重定向到文件页面（会要求输入密码）
+                        window.location.href = `/upload`;
+                    }
                 },
                 onError: function(error) {
                     // 上传失败
@@ -197,7 +215,7 @@ document.addEventListener('DOMContentLoaded', function () {
             });
 
             // 开始分片上传
-            chunkUploader.uploadFile(file, selectedExpiry);
+            chunkUploader.uploadFile(file, selectedExpiry, password);
         });
     }
 

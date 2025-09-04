@@ -222,19 +222,50 @@ document.addEventListener('DOMContentLoaded', function () {
             
             if (!fileHash) return;
             
-            // 创建隐藏的iframe来触发下载
-            const iframe = document.createElement('iframe');
-            iframe.style.display = 'none';
-            iframe.src = url;
-            document.body.appendChild(iframe);
-            
-            // 延迟移除iframe
-            setTimeout(() => {
-                document.body.removeChild(iframe);
-            }, 1000);
-            
-            // 更新下载次数显示
-            updateDownloadCount(fileHash);
+            // 先获取文件信息
+            fetch(`/api/file/${fileHash}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // 使用分片下载器下载文件
+                        const chunkDownloader = new ChunkDownloader({
+                            chunkSize: 2 * 1024 * 1024, // 2MB chunks
+                            maxConcurrent: 3,
+                            maxRetries: 3,
+                            retryDelay: 1000,
+                            onProgress: function(progress) {
+                                // 更新下载进度
+                                console.log(`下载进度: ${Math.round(progress.progress)}%`);
+                            },
+                            onSuccess: function(result) {
+                                // 下载成功
+                                console.log('下载完成:', result);
+                                showMessage('Download completed successfully!', 'success');
+                                
+                                // 更新下载次数显示
+                                updateDownloadCount(fileHash);
+                            },
+                            onError: function(error) {
+                                // 下载失败
+                                console.error('下载失败:', error);
+                                showMessage('Download failed: ' + error.message, 'error');
+                            }
+                        });
+
+                        // 使用原始文件名
+                        const filename = data.file_name || fileHash || 'download';
+
+                        // 开始分片下载
+                        chunkDownloader.downloadFile(url, filename);
+                    } else {
+                        console.error('获取文件信息失败:', data.message);
+                        showMessage('Failed to get file info: ' + data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('获取文件信息失败:', error);
+                    showMessage('Failed to get file info', 'error');
+                });
         });
     });
 });
@@ -246,7 +277,8 @@ function updateDownloadCount(fileHash) {
     for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
         const hashElement = row.querySelector('.file-hash-value');
-        if (hashElement && hashElement.textContent === `(${fileHash})`) {
+        // 检查hashElement的文本内容是否包含fileHash的前缀
+        if (hashElement && hashElement.textContent.includes(fileHash.substring(0, 8))) {
             const downloadElement = row.querySelector('.file-downloads');
             if (downloadElement) {
                 const currentCount = parseInt(downloadElement.textContent) || 0;
@@ -261,7 +293,51 @@ function updateDownloadCount(fileHash) {
     cards.forEach(card => {
         const hashElement = card.querySelector('.file-hash-value');
         if (hashElement && hashElement.textContent.includes(fileHash.substring(0, 8))) {
-            // 注意：卡片视图中没有显示下载次数，所以这里不需要更新
+            const downloadElement = card.querySelector('.file-downloads');
+            if (downloadElement) {
+                const currentCount = parseInt(downloadElement.textContent) || 0;
+                downloadElement.textContent = currentCount + 1;
+            }
         }
     });
+}
+
+// 显示消息函数
+function showMessage(message, type) {
+    // 创建消息元素
+    const messageEl = document.createElement('div');
+    messageEl.className = `message message-${type}`;
+    messageEl.textContent = message;
+    
+    // 添加样式
+    messageEl.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        border-radius: 4px;
+        color: white;
+        font-weight: 500;
+        z-index: 1000;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+        ${type === 'success' ? 'background-color: #4CAF50;' : 'background-color: #f44336;'}
+    `;
+    
+    // 添加到页面
+    document.body.appendChild(messageEl);
+    
+    // 显示动画
+    setTimeout(() => {
+        messageEl.style.transform = 'translateX(0)';
+    }, 10);
+    
+    // 3秒后自动移除
+    setTimeout(() => {
+        messageEl.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            document.body.removeChild(messageEl);
+        }, 300);
+    }, 3000);
 }

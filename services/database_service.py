@@ -114,7 +114,7 @@ def init_db():
     conn.close()
 
 
-def add_file(file_name, file_hash, file_size, expiry_date, upload_ip, username):
+def add_file(file_name, file_hash, file_size, expiry_date, upload_ip, username, password=None):
     """
     将文件信息添加到数据库中。
 
@@ -126,6 +126,7 @@ def add_file(file_name, file_hash, file_size, expiry_date, upload_ip, username):
     expiry_date (datetime): 文件过期日期。
     upload_ip (str): 文件上传者的IP地址。
     username (str): 上传用户名。
+    password (str, optional): 文件密码。如果未提供, 将生成一个随机密码。
 
     返回:
     tuple: 文件密码。
@@ -137,8 +138,9 @@ def add_file(file_name, file_hash, file_size, expiry_date, upload_ip, username):
     # 获取当前的UTC时间作为上传日期
     upload_date = datetime.now(tz=UTC)
 
-    # 生成随机6位密码
-    password = "".join(random.choices("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=6))
+    # 如果没有提供密码, 生成随机6位密码
+    if password is None:
+        password = "".join(random.choices("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", k=6))
 
     # 将文件信息插入到数据库中
     cursor.execute(

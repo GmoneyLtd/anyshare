@@ -106,10 +106,60 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- 添加分片下载链接 -->
+            <div class="link-box">
+                <h2>
+                    <span aria-hidden="true" class="matsym">download</span>
+                    <span>Chunked download link</span>
+                </h2>
+
+                <div class="link-field">
+                    <div class="link-actions">
+                        <button class="btn btn-action" id="chunked-download-btn">
+                            <span aria-hidden="true" class="matsym">download</span>
+                            <span>Chunked Download</span>
+                        </button>
+
+                        <button class="btn btn-action copy-btn" id="copy-chunked-btn">
+                            <span aria-hidden="true" class="matsym">content_paste</span>
+                            <span>Copy to clipboard</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     </main>
 
     <script src="/static/js/main.js"></script>
+    <script src="/static/js/chunk-download.js"></script>
+    <script>
+        // 添加分片下载功能
+        document.addEventListener('DOMContentLoaded', function () {
+            // 设置复制按钮的数据
+            const copyChunkedBtn = document.getElementById('copy-chunked-btn');
+            
+            if (copyChunkedBtn) {
+                copyChunkedBtn.addEventListener('click', function () {
+                    // 复制当前页面的URL
+                    const currentUrl = window.location.href;
+                    
+                    navigator.clipboard.writeText(currentUrl)
+                        .then(() => {
+                            const originalText = this.querySelector('span:last-child').textContent;
+                            this.querySelector('span:last-child').textContent = 'Copying!';
+
+                            setTimeout(() => {
+                                this.querySelector('span:last-child').textContent = originalText;
+                            }, 2000);
+                        })
+                        .catch(err => {
+                            console.error('copy failed:', err);
+                        });
+                });
+            }
+        });
+    </script>
 </body>
 
 </html>

@@ -14,7 +14,7 @@ from services.system_service import get_relative_time
 app_logger = get_logger()
 
 
-def upload_file(file_data, user_info, client_ip, file_limit_size, upload_folder):
+def upload_file(file_data, user_info, client_ip, file_limit_size, upload_folder, password=None):
     """
     处理文件上传业务逻辑
 
@@ -24,6 +24,7 @@ def upload_file(file_data, user_info, client_ip, file_limit_size, upload_folder)
         client_ip: 客户端IP
         file_limit_size: 文件大小限制
         upload_folder: 上传文件夹路径
+        password: 文件密码(可选)
 
     Returns:
         dict: 包含上传状态和文件信息的字典
@@ -73,12 +74,12 @@ def upload_file(file_data, user_info, client_ip, file_limit_size, upload_folder)
         expiry_date = datetime.now(UTC) + timedelta(days=1)
 
         # 保存到数据库
-        password = db_add_file(file_name, file_hash, total_size, expiry_date, client_ip, username)
+        password = db_add_file(file_name, file_hash, total_size, expiry_date, client_ip, username, password)
 
         app_logger.info(
             f"{username}'s file upload has been completed, filename: '{file_name}', hash: {file_hash}, expiry: 1 day, size: {total_size} bytes, Client-IP: {client_ip}"
         )
-        return {"status": "success", "file_hash": file_hash}
+        return {"status": "success", "file_hash": file_hash, "password": password}
     except Exception as e:
         app_logger.error(
             f"{username}'s file upload failed: '{file_name if 'file_name' in locals() else 'unknown'}', error: {str(e)}"
