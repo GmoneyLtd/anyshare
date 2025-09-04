@@ -17,6 +17,7 @@ from services.database_service import (
     get_user,
     get_user_files,
 )
+from services.database_service import update_downloads as db_update_downloads
 from services.file_service import delete_file, download_file, update_file_expiry, upload_file
 from services.logger_service import get_logger
 from services.system_service import (
@@ -377,7 +378,7 @@ def get_file_info():
 
         request_id = str(uuid.uuid4())[:8]
         app_logger.info(
-            f"File download request received, req_id: {request_id}, hash={file_hash}, pwd={password}, Client-IP: {client_ip}"
+            f"File download request received, req_id: {request_id}, file_name: {file_name}, hash={file_hash}, pwd={password}, Client-IP: {client_ip}"
         )
         # 检查是否为分片下载请求 (Range请求头)
         range_header = request.headers.get("Range", None)
@@ -408,15 +409,13 @@ def get_file_info():
                 # 只有在第一个分片请求时才更新下载次数
                 # 我们通过检查Range头来判断是否是第一个分片请求
                 if start == 0:
-                    from services.database_service import update_downloads as db_update_downloads
-
                     db_update_downloads(file_hash)
 
                 # 读取指定范围的文件内容
                 def stream_range():
                     try:
                         app_logger.info(
-                            f"Starting chunk download, req_id: {request_id}, file_name: {file_name}, hash: {file_hash}, range: {start}-{end}, chunk: {chunk_number}, Client-IP: {client_ip}"
+                            f"Starting chunk download, req_id: {request_id}, chunk: {chunk_number}, file_name: {file_name}, hash: {file_hash}, range: {start}-{end}, Client-IP: {client_ip}"
                         )
                         bytes_sent = 0
                         with open(file_path, "rb") as f:
@@ -432,16 +431,16 @@ def get_file_info():
                                 # 只有在传输大量数据时才记录调试信息
                                 if bytes_sent % (8192 * 100) == 0:  # 每100个chunk记录一次
                                     app_logger.debug(
-                                        f"Sending chunk data, req_id: {request_id}, file_name: {file_name}, hash: {file_hash}, chunk: {chunk_number}, bytes sent: {bytes_sent}, remaining: {remaining}, Client-IP: {client_ip}"
+                                        f"Sending chunk data, req_id: {request_id}, chunk: {chunk_number}, file_name: {file_name}, hash: {file_hash}, chunk: {chunk_number}, bytes sent: {bytes_sent}, remaining: {remaining}, Client-IP: {client_ip}"
                                     )
                                 yield data
 
                         app_logger.info(
-                            f"Chunk download completed, req_id: {request_id}, file_name: {file_name}, hash: {file_hash}, range: {start}-{end}, chunk: {chunk_number}, size: {bytes_sent} bytes, Client-IP: {client_ip}"
+                            f"Chunk download completed, req_id: {request_id}, chunk: {chunk_number}, file_name: {file_name}, hash: {file_hash}, range: {start}-{end}, size: {bytes_sent} bytes, Client-IP: {client_ip}"
                         )
                     except Exception as e:
                         app_logger.error(
-                            f"Error during chunk download, req_id: {request_id}, file_name: {file_name}, hash: {file_hash}, chunk: {chunk_number}, error: {str(e)}, Client-IP: {client_ip}"
+                            f"Error during chunk download, req_id: {request_id}, chunk: {chunk_number}, file_name: {file_name}, hash: {file_hash}, error: {str(e)}, Client-IP: {client_ip}"
                         )
                         raise
 
@@ -466,7 +465,6 @@ def get_file_info():
 
         else:
             # 完整文件下载, 更新下载次数
-            from services.database_service import update_downloads as db_update_downloads
 
             db_update_downloads(file_hash)
 
