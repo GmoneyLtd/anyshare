@@ -472,7 +472,7 @@ def get_file_info():
             def stream():
                 try:
                     app_logger.info(
-                        f"Starting full file download for file, req_id: {request_id}, file_name: {file_name}, hash: {file_hash}, Client-IP: {client_ip}"
+                        f"Starting full file download, req_id: {request_id}, file_name: {file_name}, hash: {file_hash}, Client-IP: {client_ip}"
                     )
                     bytes_sent = 0
                     with open(file_path, "rb") as f:
