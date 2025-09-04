@@ -372,8 +372,6 @@ def get_file_info():
         file_path = result["file_path"]
         file_name = result["file_name"]
 
-        app_logger.info(f"File service result: {result}")
-
         # 确保文件名正确编码, 避免特殊字符问题
         encoded_filename = urllib.parse.quote(file_name.encode("utf-8"))
 
@@ -404,7 +402,7 @@ def get_file_info():
                 def stream_range():
                     try:
                         app_logger.debug(
-                            f"Starting file stream for: '{file_name}', hash: {file_hash}, range: {start}-{end}, Client-IP: {client_ip}"
+                            f"Starting file stream for, file_name: {file_name}, hash: {file_hash}, range: {start}-{end}, Client-IP: {client_ip}"
                         )
                         bytes_sent = 0
                         with open(file_path, "rb") as f:
@@ -420,11 +418,11 @@ def get_file_info():
                                 yield data
 
                         app_logger.info(
-                            f"File chunk download completed: '{file_name}', hash: {file_hash}, range: {start}-{end}, size: {bytes_sent} bytes, Client-IP: {client_ip}"
+                            f"File chunk download completed, file_name: {file_name}, hash: {file_hash}, range: {start}-{end}, size: {bytes_sent} bytes, Client-IP: {client_ip}"
                         )
                     except Exception as e:
                         app_logger.error(
-                            f"Error during file chunk download: '{file_name}', hash: {file_hash}, error: {str(e)}, Client-IP: {client_ip}"
+                            f"Error during file chunk download, file_name: {file_name}, hash: {file_hash}, error: {str(e)}, Client-IP: {client_ip}"
                         )
                         raise
 
@@ -441,9 +439,6 @@ def get_file_info():
                 response.set_header("Expires", "0")
                 response.set_header("X-Content-Type-Options", "nosniff")
 
-                app_logger.debug(
-                    f"Response headers set for range request: Content-Type={response.content_type}, Content-Range={response.headers['Content-Range']}"
-                )
                 return stream_range()
             except Exception as e:
                 app_logger.error(f"Error processing range request: {str(e)}")
@@ -453,7 +448,7 @@ def get_file_info():
         # 使用流式响应下载文件 (完整文件)
         def stream():
             try:
-                app_logger.debug(f"Starting file stream for: '{file_name}', hash: {file_hash}, Client-IP: {client_ip}")
+                app_logger.info(f"Starting file download, file_name: {file_name}, hash: {file_hash}, Client-IP: {client_ip}")
                 bytes_sent = 0
                 with open(file_path, "rb") as f:
                     while True:
@@ -464,11 +459,11 @@ def get_file_info():
                         yield data
 
                 app_logger.info(
-                    f"File download completed: '{file_name}', hash: {file_hash}, size: {bytes_sent} bytes, Client-IP: {client_ip}"
+                    f"File download completed(not chunk), file_name: {file_name}, hash: {file_hash}, size: {bytes_sent} bytes, Client-IP: {client_ip}"
                 )
             except Exception as e:
                 app_logger.error(
-                    f"Error during file download: '{file_name}', hash: {file_hash}, error: {str(e)}, Client-IP: {client_ip}"
+                    f"Error during file download, file_name: {file_name}, hash: {file_hash}, error: {str(e)}, Client-IP: {client_ip}"
                 )
                 raise
 
@@ -483,9 +478,6 @@ def get_file_info():
         response.set_header("Accept-Ranges", "bytes")
         response.set_header("Content-Length", str(os.path.getsize(file_path)))
 
-        app_logger.debug(
-            f"Response headers set: Content-Type={response.content_type}, Content-Disposition={response.headers['Content-Disposition']}"
-        )
         return stream()
     elif result["status"] == "password_required":
         # 确定用户角色

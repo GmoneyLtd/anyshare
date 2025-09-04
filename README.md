@@ -2,7 +2,7 @@
 
 anyShare 是一个用 Python 和 Bottle 构建的轻量级文件分享解决方案。它允许用户快速上传文件，生成安全的、受密码保护的分享链接，并可以为文件设置自动过期时间。项目内置了管理员后台，方便对文件和用户进行管理。
 
-![anyShare Screenshot](./anyshare-screenshot.png)  <!-- 请替换为您的项目截图链接 -->
+<img src="./anyshare-screenshot.png" alt="anyShare Screenshot" width="50%" style="display: block; margin: 0 auto;">
 
 ## ✨ 功能特性
 

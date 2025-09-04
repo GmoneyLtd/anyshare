@@ -23,31 +23,32 @@ document.addEventListener('DOMContentLoaded', function () {
         const messageEl = document.createElement('div');
         messageEl.className = `message message-${type}`;
         messageEl.textContent = message;
-        
+
         // 添加样式
         messageEl.style.cssText = `
             position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 12px 20px;
+            top: 100px;
+            right: 5px;
+            padding: 5px 10px;
             border-radius: 4px;
             color: white;
-            font-weight: 500;
+            font-weight: 400;
+            font-size: 10.5px;
             z-index: 1000;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             transform: translateX(100%);
             transition: transform 0.3s ease;
-            ${type === 'success' ? 'background-color: #4CAF50;' : 'background-color: #f44336;'}
+            ${type === 'success' ? 'background-color:rgb(237, 142, 161);' : 'background-color:rgba(123, 103, 102, 0.63);'}
         `;
-        
+
         // 添加到页面
         document.body.appendChild(messageEl);
-        
+
         // 显示动画
         setTimeout(() => {
             messageEl.style.transform = 'translateX(0)';
         }, 10);
-        
+
         // 3秒后自动移除
         setTimeout(() => {
             messageEl.style.transform = 'translateX(100%)';
