@@ -1023,10 +1023,13 @@ function createProgressBar() {
     
     // 添加样式
     progressBarContainer.style.cssText = `
+        position: relative;
         display: flex;
         align-items: center;
         gap: 10px;
         width: 100%;
+        height: 36px;
+        padding: 5px 6px;
     `;
     
     const progressBar = progressBarContainer.querySelector('.download-progress-bar');
