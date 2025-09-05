@@ -430,7 +430,7 @@ def get_file_info():
                                 bytes_sent += len(data)
                                 remaining -= len(data)
                                 # 只有在传输大量数据时才记录调试信息
-                                if bytes_sent % (8192 * 100) == 0:  # 每100个chunk记录一次
+                                if bytes_sent % (8192 * 256) == 0:  # 每256个chunk记录一次
                                     app_logger.debug(
                                         f"Sending chunk data, req_id: {request_id}, chunk: {chunk_number}, file_name: {file_name}, hash: {file_hash}, chunk: {chunk_number}, bytes sent: {bytes_sent}, remaining: {remaining}, Client-IP: {client_ip}"
                                     )
@@ -483,7 +483,7 @@ def get_file_info():
                                 break
                             bytes_sent += len(data)
                             # 只有在传输大量数据时才记录调试信息
-                            if bytes_sent % (8192 * 100) == 0:  # 每100个chunk记录一次
+                            if bytes_sent % (8192 * 256) == 0:  # 每256个chunk记录一次
                                 app_logger.debug(
                                     f"Sending data for full file download, req_id: {request_id}, file_name: {file_name}, hash: {file_hash}, bytes sent: {bytes_sent}, Client-IP: {client_ip}"
                                 )
