@@ -488,15 +488,15 @@ def get_file_info():
                                     f"Sending data for full file download, req_id: {request_id}, file_name: {file_name}, hash: {file_hash}, bytes sent: {bytes_sent}, Client-IP: {client_ip}"
                                 )
                             yield data
-
-                    app_logger.info(
-                        f"Full file download completed, req_id: {request_id}, file_name: {file_name}, hash: {file_hash}, size: {bytes_sent} bytes, Client-IP: {client_ip}"
-                    )
                 except Exception as e:
                     app_logger.error(
                         f"Error during full file download, req_id: {request_id}, file_name: {file_name}, hash: {file_hash}, error: {str(e)}, Client-IP: {client_ip}"
                     )
                     raise
+                else:
+                    app_logger.info(
+                        f"Full file download completed, req_id: {request_id}, file_name: {file_name}, hash: {file_hash}, size: {bytes_sent} bytes, Client-IP: {client_ip}"
+                    )
 
             # 设置响应头
             response.content_type = "application/octet-stream"

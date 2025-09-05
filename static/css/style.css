@@ -1110,3 +1110,13 @@ h2 {
     border-radius: 4px;
     min-width: 100px;
 }
+
+/* 下载进度条样式 */
+.download-progress {
+    display: inline-block;
+    min-width: 30px;
+    text-align: center;
+    font-weight: bold;
+    color: #007bff;
+    font-size: 10.5px;
+}

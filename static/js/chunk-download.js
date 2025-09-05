@@ -223,66 +223,93 @@ document.addEventListener('DOMContentLoaded', function () {
                     return;
                 }
                 
-               
-                
-                // 先获取文件信息
-                fetch(`/api/file/${fileHash}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.status === 'success') {
-                            // 使用分片下载器下载文件
-                            const chunkDownloader = new ChunkDownloader({
-                                chunkSize: 2 * 1024 * 1024, // 2MB chunks
-                                maxConcurrent: 3,
-                                maxRetries: 3,
-                                retryDelay: 1000,
-                                onProgress: function(progress) {
-                                    // 更新下载进度
-                                    console.log(`Download progress: ${Math.round(progress.progress)}%`);
+                // 保存原始按钮文本
+                const originalText = openBtn.innerHTML;
+                       
+                        // 先获取文件信息
+                        fetch(`/api/file/${fileHash}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.status === 'success') {
+                                    // 使用分片下载器下载文件
+                                    const chunkDownloader = new ChunkDownloader({
+                                        chunkSize: 2 * 1024 * 1024, // 2MB chunks
+                                        maxConcurrent: 3,
+                                        maxRetries: 3,
+                                        retryDelay: 1000,
+                                        onProgress: function(progress) {
+                                            // 更新下载进度
+                                            console.log(`Download progress: ${Math.round(progress.progress)}%`);
+                                            
+                                            // 更新按钮上的进度显示，使用label而不是占用图标
+                                            const progressText = `${Math.round(progress.progress)}%`;
+                                            const secondSpan = openBtn.querySelector('span:last-child');
+                                            if (secondSpan) {
+                                                // 保存原始文本内容
+                                                if (!openBtn.dataset.originalText) {
+                                                    openBtn.dataset.originalText = secondSpan.textContent;
+                                                }
+                                                // 更新为进度文本
+                                                secondSpan.textContent = progressText;
+                                            }
+                                        },
+                                        onSuccess: function(result) {
+                                            // 下载成功
+                                            console.log('Download completed:', result);
+                                            showMessage('Download completed successfully!', 'success');
+                                            
+                                            // 恢复按钮原始文本
+                                            setTimeout(() => {
+                                                const secondSpan = openBtn.querySelector('span:last-child');
+                                                if (secondSpan && openBtn.dataset.originalText) {
+                                                    secondSpan.textContent = openBtn.dataset.originalText;
+                                                }
+                                                // 清除保存的原始文本数据
+                                                delete openBtn.dataset.originalText;
+                                            }, 1000);
+                                        },
+                                        onError: function(error) {
+                                            // 下载失败
+                                            console.error('Download failed:', error);
+                                            showMessage('Download failed: ' + error.message, 'error');
+                                            
+                                            // 恢复按钮原始文本
+                                            const secondSpan = openBtn.querySelector('span:last-child');
+                                            if (secondSpan && openBtn.dataset.originalText) {
+                                                secondSpan.textContent = openBtn.dataset.originalText;
+                                            }
+                                            // 清除保存的原始文本数据
+                                            delete openBtn.dataset.originalText;
+                                        }
+                                    });
+
+                                    // 使用原始文件名
+                                    const filename = data.file_name || fileHash || 'download';
                                     
-                                    // 更新按钮上的进度显示
-                                    const progressText = `${Math.round(progress.progress)}%`;
-                                    openBtn.querySelector('span:last-child').textContent = progressText;
-                                },
-                                onSuccess: function(result) {
-                                    // 下载成功
-                                    console.log('Download completed:', result);
-                                    showMessage('Download completed successfully!', 'success');
+                                    console.log(`开始分片下载文件: ${filename}`);
+
+                                    // 开始分片下载
+                                    chunkDownloader.downloadFile(fullUrl, filename);
+                                } else {
+                                    console.error('Failed to get file info:', data.message);
+                                    showMessage('Failed to get file info: ' + data.message, 'error');
                                     
                                     // 恢复按钮原始文本
-                                    openBtn.querySelector('span:last-child').textContent = 'Open';
-                                },
-                                onError: function(error) {
-                                    // 下载失败
-                                    console.error('Download failed:', error);
-                                    showMessage('Download failed: ' + error.message, 'error');
-                                    
-                                    // 恢复按钮原始文本
-                                    openBtn.querySelector('span:last-child').textContent = 'Open';
+                                    openBtn.innerHTML = originalText;
                                 }
+                            })
+                            .catch(error => {
+                                console.error('Failed to get file info:', error);
+                                showMessage('Failed to get file info', 'error');
+                                
+                                // 恢复按钮原始文本
+                                openBtn.innerHTML = originalText;
                             });
-
-                            // 使用原始文件名
-                            const filename = data.file_name || fileHash || 'download';
-                            
-                            console.log(`开始分片下载文件: ${filename}`);
-
-                            // 开始分片下载
-                            chunkDownloader.downloadFile(fullUrl, filename);
-                        } else {
-                            console.error('Failed to get file info:', data.message);
-                            showMessage('Failed to get file info: ' + data.message, 'error');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Failed to get file info:', error);
-                        showMessage('Failed to get file info', 'error');
                     });
-            });
-            
-            // 标记该按钮已经初始化
-            openBtn.setAttribute('data-chunk-download-initialized', 'true');
-        }
+                    
+                    // 标记该按钮已经初始化
+                    openBtn.setAttribute('data-chunk-download-initialized', 'true');
+                }
     }
     
     // 显示消息函数

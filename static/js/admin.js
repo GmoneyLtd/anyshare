@@ -414,16 +414,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
-                        // 保存原始按钮HTML
-                        const originalHtml = link.closest('td, .file-card-actions').innerHTML;
+                        // 保存原始按钮文本
+                        const originalText = link.innerHTML;
                         
-                        // 创建进度条元素
-                        const progressBar = createProgressBar();
-                        
-                        // 替换按钮为进度条
-                        const actionCell = link.closest('td, .file-card-actions');
-                        actionCell.innerHTML = '';
-                        actionCell.appendChild(progressBar);
+                        // 修改按钮为进度显示
+                        link.innerHTML = '<span class="download-progress">0%</span>';
+                        link.style.pointerEvents = 'none'; // 禁用点击
                         
                         // 使用分片下载器下载文件
                         const chunkDownloader = new ChunkDownloader({
@@ -433,8 +429,11 @@ document.addEventListener('DOMContentLoaded', function () {
                             retryDelay: 1000,
                             onProgress: function(progress) {
                                 // 更新下载进度
-                                console.log(`Download progress: ${Math.round(progress.progress)}%`);
-                                updateProgressBar(progressBar, Math.round(progress.progress));
+                                const progressText = `${Math.round(progress.progress)}%`;
+                                const progressElement = link.querySelector('.download-progress');
+                                if (progressElement) {
+                                    progressElement.textContent = progressText;
+                                }
                             },
                             onSuccess: function(result) {
                                 // 下载成功
@@ -446,9 +445,8 @@ document.addEventListener('DOMContentLoaded', function () {
                                 
                                 // 恢复原始按钮
                                 setTimeout(() => {
-                                    actionCell.innerHTML = originalHtml;
-                                    // 重新绑定事件
-                                    bindActionEvents();
+                                    link.innerHTML = originalText;
+                                    link.style.pointerEvents = ''; // 恢复点击
                                 }, 1000);
                             },
                             onError: function(error) {
@@ -457,9 +455,8 @@ document.addEventListener('DOMContentLoaded', function () {
                                 showMessage('Download failed: ' + error.message, 'error');
                                 
                                 // 恢复原始按钮
-                                actionCell.innerHTML = originalHtml;
-                                // 重新绑定事件
-                                bindActionEvents();
+                                link.innerHTML = originalText;
+                                link.style.pointerEvents = ''; // 恢复点击
                             }
                         });
 
@@ -1091,16 +1088,12 @@ function bindActionEvents() {
                     .then(response => response.json())
                     .then(data => {
                         if (data.status === 'success') {
-                            // 保存原始按钮HTML
-                            const originalHtml = link.closest('td, .file-card-actions').innerHTML;
+                            // 保存原始按钮文本
+                            const originalText = link.innerHTML;
                             
-                            // 创建进度条元素
-                            const progressBar = createProgressBar();
-                            
-                            // 替换按钮为进度条
-                            const actionCell = link.closest('td, .file-card-actions');
-                            actionCell.innerHTML = '';
-                            actionCell.appendChild(progressBar);
+                            // 修改按钮为进度显示
+                            link.innerHTML = '<span class="download-progress">0%</span>';
+                            link.style.pointerEvents = 'none'; // 禁用点击
                             
                             // 使用分片下载器下载文件
                             const chunkDownloader = new ChunkDownloader({
@@ -1110,8 +1103,11 @@ function bindActionEvents() {
                                 retryDelay: 1000,
                                 onProgress: function(progress) {
                                     // 更新下载进度
-                                    console.log(`Download progress: ${Math.round(progress.progress)}%`);
-                                    updateProgressBar(progressBar, Math.round(progress.progress));
+                                    const progressText = `${Math.round(progress.progress)}%`;
+                                    const progressElement = link.querySelector('.download-progress');
+                                    if (progressElement) {
+                                        progressElement.textContent = progressText;
+                                    }
                                 },
                                 onSuccess: function(result) {
                                     // 下载成功
@@ -1123,9 +1119,8 @@ function bindActionEvents() {
                                     
                                     // 恢复原始按钮
                                     setTimeout(() => {
-                                        actionCell.innerHTML = originalHtml;
-                                        // 重新绑定事件
-                                        bindActionEvents();
+                                        link.innerHTML = originalText;
+                                        link.style.pointerEvents = ''; // 恢复点击
                                     }, 1000);
                                 },
                                 onError: function(error) {
@@ -1134,9 +1129,8 @@ function bindActionEvents() {
                                     showMessage('Download failed: ' + error.message, 'error');
                                     
                                     // 恢复原始按钮
-                                    actionCell.innerHTML = originalHtml;
-                                    // 重新绑定事件
-                                    bindActionEvents();
+                                    link.innerHTML = originalText;
+                                    link.style.pointerEvents = ''; // 恢复点击
                                 }
                             });
 
