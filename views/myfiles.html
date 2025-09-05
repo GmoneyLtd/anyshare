@@ -92,6 +92,10 @@
                                         title="delete">
                                         <span aria-label="Delete Button" class="matsym">delete</span>
                                     </button>
+                                    <button class="nav-link btn-icon copy-btn" data-hash="{{file['file_hash']}}" data-pwd="{{file['password']}}"
+                                        title="copy share link">
+                                        <span aria-hidden="true" class="matsym">content_copy</span>
+                                    </button>
                                 </td>
                             </tr>
                             % end
@@ -130,6 +134,10 @@
                             <button class="nav-link btn-icon delete-btn" data-hash="{{file['file_hash']}}"
                                 title="delete">
                                 <span class="matsym">delete</span>
+                            </button>
+                            <button class="nav-link btn-icon copy-btn" data-hash="{{file['file_hash']}}" data-pwd="{{file['password']}}"
+                                title="copy share link">
+                                <span class="matsym">content_copy</span>
                             </button>
                         </div>
                     </div>

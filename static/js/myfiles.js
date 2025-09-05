@@ -211,6 +211,41 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+    // 复制分享链接的功能
+    const copyButtons = document.querySelectorAll('.copy-btn');
+    copyButtons.forEach(button => {
+        button.addEventListener('click', function (e) {
+            e.stopPropagation(); // 阻止事件冒泡
+
+            const fileHash = this.getAttribute('data-hash');
+            const password = this.getAttribute('data-pwd');
+            
+            // 构造分享链接
+            const shareLink = `${window.location.origin}/share?hash=${fileHash}&pwd=${password}`;
+            
+            // 复制到剪贴板
+            navigator.clipboard.writeText(shareLink).then(() => {
+                showMessage('分享链接已复制到剪贴板', 'success');
+            }).catch(err => {
+                console.error('复制失败:', err);
+                showMessage('复制失败，请手动复制链接', 'error');
+                
+                // 如果复制失败，显示链接供手动复制
+                const textArea = document.createElement('textarea');
+                textArea.value = shareLink;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    showMessage('分享链接已复制到剪贴板', 'success');
+                } catch (err) {
+                    console.error('手动复制也失败了:', err);
+                }
+                document.body.removeChild(textArea);
+            });
+        });
+    });
+
     // 为下载链接添加异步下载功能，更新下载次数
     const downloadLinks = document.querySelectorAll('a[href*="/file?hash="]');
     downloadLinks.forEach(link => {
