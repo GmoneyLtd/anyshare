@@ -270,11 +270,11 @@ document.addEventListener('DOMContentLoaded', function () {
                             retryDelay: 1000,
                             onProgress: function(progress) {
                                 // 更新下载进度
-                                console.log(`下载进度: ${Math.round(progress.progress)}%`);
+                                console.log(`Download progress: ${Math.round(progress.progress)}%`);
                             },
                             onSuccess: function(result) {
                                 // 下载成功
-                                console.log('下载完成:', result);
+                                console.log('Download completed:', result);
                                 showMessage('Download completed successfully!', 'success');
                                 
                                 // 更新下载次数显示
@@ -282,7 +282,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             },
                             onError: function(error) {
                                 // 下载失败
-                                console.error('下载失败:', error);
+                                console.error('Download failed:', error);
                                 showMessage('Download failed: ' + error.message, 'error');
                             }
                         });
@@ -293,12 +293,12 @@ document.addEventListener('DOMContentLoaded', function () {
                         // 开始分片下载
                         chunkDownloader.downloadFile(url, filename);
                     } else {
-                        console.error('获取文件信息失败:', data.message);
+                        console.error('Failed to get file info:', data.message);
                         showMessage('Failed to get file info: ' + data.message, 'error');
                     }
                 })
                 .catch(error => {
-                    console.error('获取文件信息失败:', error);
+                    console.error('Failed to get file info:', error);
                     showMessage('Failed to get file info', 'error');
                 });
         });

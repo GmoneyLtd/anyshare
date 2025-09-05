@@ -928,15 +928,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
-                        showMessage('密码修改成功', 'success');
+                        showMessage('Password changed successfully', 'success');
                         closePasswordModal();
                     } else {
-                        showMessage('密码修改失败: ' + data.message, 'error');
+                        showMessage('Failed to change password: ' + data.message, 'error');
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    showMessage('密码修改失败', 'error');
+                    showMessage('Failed to change password', 'error');
                 });
         });
     }
