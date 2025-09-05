@@ -262,11 +262,21 @@ document.addEventListener('DOMContentLoaded', function () {
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
-                        // 保存原始按钮文本
-                        const originalText = link.innerHTML;
+                        // 保存原始按钮文本和样式
+                        const originalHTML = link.innerHTML;
+                        const originalClasses = link.className;
+                        const originalStyle = {
+                            pointerEvents: link.style.pointerEvents,
+                            display: link.style.display,
+                            alignItems: link.style.alignItems,
+                            justifyContent: link.style.justifyContent,
+                            width: link.style.width,
+                            height: link.style.height
+                        };
                         
                         // 修改按钮为进度显示
                         link.innerHTML = '<span class="download-progress">0%</span>';
+                        link.className = 'download-progress-link'; // 使用专门的CSS类
                         link.style.pointerEvents = 'none'; // 禁用点击
                         
                         // 使用分片下载器下载文件
@@ -293,8 +303,14 @@ document.addEventListener('DOMContentLoaded', function () {
                                 
                                 // 恢复原始按钮
                                 setTimeout(() => {
-                                    link.innerHTML = originalText;
-                                    link.style.pointerEvents = ''; // 恢复点击
+                                    link.innerHTML = originalHTML;
+                                    link.className = originalClasses;
+                                    link.style.pointerEvents = originalStyle.pointerEvents;
+                                    link.style.display = originalStyle.display;
+                                    link.style.alignItems = originalStyle.alignItems;
+                                    link.style.justifyContent = originalStyle.justifyContent;
+                                    link.style.width = originalStyle.width;
+                                    link.style.height = originalStyle.height;
                                 }, 1000);
                             },
                             onError: function(error) {
@@ -303,8 +319,14 @@ document.addEventListener('DOMContentLoaded', function () {
                                 showMessage('Download failed: ' + error.message, 'error');
                                 
                                 // 恢复原始按钮
-                                link.innerHTML = originalText;
-                                link.style.pointerEvents = ''; // 恢复点击
+                                link.innerHTML = originalHTML;
+                                link.className = originalClasses;
+                                link.style.pointerEvents = originalStyle.pointerEvents;
+                                link.style.display = originalStyle.display;
+                                link.style.alignItems = originalStyle.alignItems;
+                                link.style.justifyContent = originalStyle.justifyContent;
+                                link.style.width = originalStyle.width;
+                                link.style.height = originalStyle.height;
                             }
                         });
 
@@ -480,11 +502,21 @@ function bindActionEvents() {
                     .then(response => response.json())
                     .then(data => {
                         if (data.status === 'success') {
-                            // 保存原始按钮文本
-                            const originalText = link.innerHTML;
+                            // 保存原始按钮文本和样式
+                            const originalHTML = link.innerHTML;
+                            const originalClasses = link.className;
+                            const originalStyle = {
+                                pointerEvents: link.style.pointerEvents,
+                                display: link.style.display,
+                                alignItems: link.style.alignItems,
+                                justifyContent: link.style.justifyContent,
+                                width: link.style.width,
+                                height: link.style.height
+                            };
                             
                             // 修改按钮为进度显示
                             link.innerHTML = '<span class="download-progress">0%</span>';
+                            link.className = 'download-progress-link'; // 使用专门的CSS类
                             link.style.pointerEvents = 'none'; // 禁用点击
                             
                             // 使用分片下载器下载文件
@@ -511,8 +543,14 @@ function bindActionEvents() {
                                     
                                     // 恢复原始按钮
                                     setTimeout(() => {
-                                        link.innerHTML = originalText;
-                                        link.style.pointerEvents = ''; // 恢复点击
+                                        link.innerHTML = originalHTML;
+                                        link.className = originalClasses;
+                                        link.style.pointerEvents = originalStyle.pointerEvents;
+                                        link.style.display = originalStyle.display;
+                                        link.style.alignItems = originalStyle.alignItems;
+                                        link.style.justifyContent = originalStyle.justifyContent;
+                                        link.style.width = originalStyle.width;
+                                        link.style.height = originalStyle.height;
                                     }, 1000);
                                 },
                                 onError: function(error) {
@@ -521,8 +559,14 @@ function bindActionEvents() {
                                     showMessage('Download failed: ' + error.message, 'error');
                                     
                                     // 恢复原始按钮
-                                    link.innerHTML = originalText;
-                                    link.style.pointerEvents = ''; // 恢复点击
+                                    link.innerHTML = originalHTML;
+                                    link.className = originalClasses;
+                                    link.style.pointerEvents = originalStyle.pointerEvents;
+                                    link.style.display = originalStyle.display;
+                                    link.style.alignItems = originalStyle.alignItems;
+                                    link.style.justifyContent = originalStyle.justifyContent;
+                                    link.style.width = originalStyle.width;
+                                    link.style.height = originalStyle.height;
                                 }
                             });
 
