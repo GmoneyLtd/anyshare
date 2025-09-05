@@ -269,8 +269,8 @@ def upload():
 
 
 # 处理文件上传成功后的页面逻辑
-@app.route("/upload", method="GET")
-def upload_success():
+@app.route("/share", method="GET")
+def share_success():
     """
     检查用户登录状态, 如果未登录或未匿名登录, 则重定向到登录页面。
     如果提供了文件信息, 则解析文件信息并渲染上传成功的页面; 否则重定向到主页。
@@ -290,9 +290,9 @@ def upload_success():
         app_logger.warning(f"Unauthorized attempt to access upload page from IP: {upload_ip}")
         return redirect("/login")
     elif username == "anonymous" and config.ANONYMOUS == "true":
-        app_logger.info(f"Anonymous access to upload page from IP: {upload_ip}")
+        app_logger.info(f"Anonymous access to share page from IP: {upload_ip}")
     else:
-        app_logger.info(f"{username} access to upload page from IP: {upload_ip}")
+        app_logger.info(f"{username} access to share page from IP: {upload_ip}")
 
     # 确定用户角色
     if username == "anonymous":
@@ -336,7 +336,7 @@ def upload_success():
             return template("views/password.html", file_hash=file_hash, error="password error", user_role=user_role)
 
         # 密码验证通过, 渲染上传成功页面
-        return template("views/upload.html", file_info=file_info, user_role=user_role)
+        return template("views/share.html", file_info=file_info, user_role=user_role)
     except Exception as e:
         # 如果解析文件信息时发生错误, 渲染错误页面
         return template("error.html", message=f"Error parsing file information: {str(e)}")
@@ -550,7 +550,7 @@ def verify_password():
     如果任一信息缺失, 将返回错误页面。否则, 将用户重定向到带有密码的文件链接。
     """
     # 获取用户提交的文件哈希值和密码
-    file_hash = request.forms.get("file_hash")
+    file_hash = request.forms.get("hash")
     password = request.forms.get("password")
 
     # 检查文件哈希值和密码是否都已提供
@@ -558,8 +558,8 @@ def verify_password():
         # 返回错误页面, 提示参数错误
         return template("views/error.html", message="parameter error")
 
-    # 重定向到upload页面, 而不是直接下载文件
-    return redirect(f"/upload?file_hash={file_hash}&pwd={password}")
+    # 重定向到share页面, 而不是直接下载文件
+    return redirect(f"/share?hash={file_hash}&pwd={password}")
 
 
 # 授权用户页面路由

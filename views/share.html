@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>anyShare - File uploaded</title>
+    <title>anyShare - File shared</title>
     <link rel="icon" type="image/svg+xml" href="/static/image/anyshare.svg">
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
@@ -106,7 +106,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- 添加分片下载链接 -->
             <div class="link-box">
                 <h2>
@@ -138,12 +138,12 @@
         document.addEventListener('DOMContentLoaded', function () {
             // 设置复制按钮的数据
             const copyChunkedBtn = document.getElementById('copy-chunked-btn');
-            
+
             if (copyChunkedBtn) {
                 copyChunkedBtn.addEventListener('click', function () {
                     // 复制当前页面的URL
                     const currentUrl = window.location.href;
-                    
+
                     navigator.clipboard.writeText(currentUrl)
                         .then(() => {
                             const originalText = this.querySelector('span:last-child').textContent;

@@ -190,10 +190,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     showMessage('Upload completed successfully!', 'success');
                     // 重定向到文件页面，包含文件哈希和密码
                     if (result.file_hash) {
-                        window.location.href = `/upload?hash=${result.file_hash}&pwd=${password}`;
+                        window.location.href = `/share?hash=${result.file_hash}&pwd=${password}`;
                     } else {
                         // 如果没有文件哈希信息，仍然重定向到文件页面（会要求输入密码）
-                        window.location.href = `/upload`;
+                        window.location.href = `/share`;
                     }
                 },
                 onError: function(error) {
