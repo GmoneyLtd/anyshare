@@ -9,7 +9,7 @@ set -e
 REGISTRY="registry.cn-hangzhou.aliyuncs.com"
 NAMESPACE="gmoneyltd"
 IMAGE_NAME="anyshare"
-VERSION="2.3.2"
+VERSION="2.3.3"
 PLATFORMS="linux/amd64,linux/arm64"
 
 # 构建完整的镜像标签
