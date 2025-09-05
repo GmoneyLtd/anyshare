@@ -242,14 +242,14 @@ document.addEventListener('DOMContentLoaded', function () {
                             }
                         }
 
-                        showMessage('文件过期时间已更新', 'success');
+                        showMessage('File expiration time updated successfully', 'success');
                     } else {
-                        showMessage('更新失败: ' + data.message, 'error');
+                        showMessage('Update failed: ' + data.message, 'error');
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    showMessage('更新请求失败', 'error');
+                    showMessage('Failed to update expiration time', 'error');
                 });
         });
     }
@@ -315,12 +315,12 @@ document.addEventListener('DOMContentLoaded', function () {
                             card.remove();
                             updateStats();
                         } else {
-                            showMessage('删除失败: ' + data.message, 'error');
+                            showMessage('Delete Failed: ' + data.message, 'error');
                         }
                     })
                     .catch((error) => {
                         console.error('Error:', error);
-                        showMessage('删除请求失败', 'error');
+                        showMessage('Delete request failed', 'error');
                         // 恢复按钮状态
                         this.querySelector('.matsym').textContent = originalIcon;
                         this.disabled = false;

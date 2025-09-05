@@ -225,7 +225,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // 设置复制按钮的数据
     const publicLinkBtn = document.getElementById('copy-public-btn');
-    const protectedLinkBtn = document.getElementById('copy-protected-btn');
+    const fileLinkBtn = document.getElementById('copy-file-link-btn');
+    const shareLinkBtn = document.getElementById('copy-share-link-btn');
     const publicLinkInput = document.getElementById('public-link');
     const protectedLinkInput = document.getElementById('protected-link');
 
@@ -255,8 +256,9 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    if (protectedLinkBtn) {
-        protectedLinkBtn.addEventListener('click', function () {
+    // 复制文件链接按钮事件
+    if (fileLinkBtn) {
+        fileLinkBtn.addEventListener('click', function () {
             navigator.clipboard.writeText(protectedLinkInput.value)
                 .then(() => {
                     const originalText = this.querySelector('span:last-child').textContent;
@@ -269,6 +271,32 @@ document.addEventListener('DOMContentLoaded', function () {
                 .catch(err => {
                     console.error('copy failed:', err);
                 });
+        });
+    }
+
+    // 复制分享链接按钮事件
+    if (shareLinkBtn) {
+        shareLinkBtn.addEventListener('click', function () {
+            // 构造分享页面URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const hash = urlParams.get('hash');
+            const pwd = urlParams.get('pwd');
+            
+            if (hash && pwd) {
+                const shareUrl = `${baseUrl}/share?hash=${hash}&pwd=${pwd}`;
+                navigator.clipboard.writeText(shareUrl)
+                    .then(() => {
+                        const originalText = this.querySelector('span:last-child').textContent;
+                        this.querySelector('span:last-child').textContent = 'Copying!';
+
+                        setTimeout(() => {
+                            this.querySelector('span:last-child').textContent = originalText;
+                        }, 2000);
+                    })
+                    .catch(err => {
+                        console.error('copy failed:', err);
+                    });
+            }
         });
     }
 });
