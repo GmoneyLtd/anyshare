@@ -223,7 +223,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     return;
                 }
                 
-                console.log(`开始获取文件信息，文件哈希: ${fileHash}`);
+               
                 
                 // 先获取文件信息
                 fetch(`/api/file/${fileHash}`)
@@ -238,11 +238,11 @@ document.addEventListener('DOMContentLoaded', function () {
                                 retryDelay: 1000,
                                 onProgress: function(progress) {
                                     // 更新下载进度
-                                    console.log(`Download progress: ${Math.round(progress.progress)}%`);
+                                    console.log(`下载进度: ${Math.round(progress.progress)}%`);
                                 },
                                 onSuccess: function(result) {
                                     // 下载成功
-                                    console.log('Download completed:', result);
+                                    console.log('下载完成:', result);
                                     showMessage('Download completed successfully!', 'success');
                                 },
                                 onError: function(error) {
@@ -255,7 +255,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             // 使用原始文件名
                             const filename = data.file_name || fileHash || 'download';
                             
-                            console.log(`Starting chunked download of file: ${filename}`);
+                            console.log(`开始分片下载文件: ${filename}`);
 
                             // 开始分片下载
                             chunkDownloader.downloadFile(fullUrl, filename);
