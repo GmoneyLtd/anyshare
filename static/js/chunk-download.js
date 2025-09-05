@@ -238,17 +238,27 @@ document.addEventListener('DOMContentLoaded', function () {
                                 retryDelay: 1000,
                                 onProgress: function(progress) {
                                     // 更新下载进度
-                                    console.log(`下载进度: ${Math.round(progress.progress)}%`);
+                                    console.log(`Download progress: ${Math.round(progress.progress)}%`);
+                                    
+                                    // 更新按钮上的进度显示
+                                    const progressText = `${Math.round(progress.progress)}%`;
+                                    openBtn.querySelector('span:last-child').textContent = progressText;
                                 },
                                 onSuccess: function(result) {
                                     // 下载成功
-                                    console.log('下载完成:', result);
+                                    console.log('Download completed:', result);
                                     showMessage('Download completed successfully!', 'success');
+                                    
+                                    // 恢复按钮原始文本
+                                    openBtn.querySelector('span:last-child').textContent = 'Open';
                                 },
                                 onError: function(error) {
                                     // 下载失败
                                     console.error('Download failed:', error);
                                     showMessage('Download failed: ' + error.message, 'error');
+                                    
+                                    // 恢复按钮原始文本
+                                    openBtn.querySelector('span:last-child').textContent = 'Open';
                                 }
                             });
 
