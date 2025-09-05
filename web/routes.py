@@ -272,10 +272,12 @@ def upload():
 @app.route("/share", method="GET")
 def share_success():
     """
-    检查用户登录状态, 如果未登录或未匿名登录, 则重定向到登录页面。
-    如果提供了文件信息, 则解析文件信息并渲染上传成功的页面; 否则重定向到主页。
+    处理文件分享页面逻辑。
+    允许任何人访问此页面, 无论是否登录。
+    核心逻辑围绕文件hash和密码验证展开。
+    登录检查主要用于获取用户信息作为日志记录。
     """
-    # 从cookie中获取用户名并验证上传文件权限情况
+    # 从cookie中获取用户名, 用于日志记录和角色识别
     username = request.get_cookie("username", secret=config.COOKIE_SECRET) or "anonymous"
     # 获取URL参数中的文件信息字符串
     file_hash = request.query.get("hash")
@@ -286,15 +288,13 @@ def share_success():
     if not file_hash:
         return redirect("/")
 
-    if username == "anonymous" and config.ANONYMOUS == "false":
-        app_logger.warning(f"Unauthorized attempt to access upload page from IP: {upload_ip}")
-        return redirect("/login")
-    elif username == "anonymous" and config.ANONYMOUS == "true":
+    # 记录访问日志
+    if username == "anonymous":
         app_logger.info(f"Anonymous access to share page from IP: {upload_ip}")
     else:
         app_logger.info(f"{username} access to share page from IP: {upload_ip}")
 
-    # 确定用户角色
+    # 确定用户角色 (用于页面显示)
     if username == "anonymous":
         user_role = "anonymous"
     else:
@@ -339,7 +339,8 @@ def share_success():
         return template("views/share.html", file_info=file_info, user_role=user_role)
     except Exception as e:
         # 如果解析文件信息时发生错误, 渲染错误页面
-        return template("error.html", message=f"Error parsing file information: {str(e)}")
+        app_logger.error(f"Error accessing share page for file: {file_hash}, error: {str(e)}, Client-IP: {upload_ip}")
+        return template("views/error.html", message=f"Error parsing file information: {str(e)}")
 
 
 # 获取文件信息
