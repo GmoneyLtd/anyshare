@@ -1,5 +1,5 @@
 services:
-  hwatch:
+  anyshare:
     image: registry.cn-hangzhou.aliyuncs.com/gmoneyltd/anyshare:latest
     container_name: anyshare4play   
     hostname: anyshare4play
