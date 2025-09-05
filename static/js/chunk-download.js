@@ -11,6 +11,8 @@ class ChunkDownloader {
 
     async downloadFile(url, filename) {
         try {
+            console.log(`开始下载文件: ${filename}, URL: ${url}`);
+            
             // 获取文件大小 - 使用一个不会触发下载计数的特殊端点
             const headResponse = await fetch(`/api/file/${this.getFileHashFromUrl(url)}`);
             
@@ -40,6 +42,8 @@ class ChunkDownloader {
                 tasks.push({ start, end, chunkIndex });
             }
             
+            console.log(`开始并发下载 ${tasks.length} 个文件块`);
+            
             // 并发下载文件块
             await this._downloadChunksConcurrently(url, tasks, chunks, fileSize, (bytes) => {
                 downloadedBytes += bytes;
@@ -52,8 +56,11 @@ class ChunkDownloader {
             });
             
             // 合并文件块
+            console.log('开始合并文件块');
             const blob = new Blob(chunks);
             this._saveFile(blob, filename);
+            
+            console.log('文件下载完成并保存');
             
             this.onSuccess({
                 url: url,
@@ -80,12 +87,15 @@ class ChunkDownloader {
     async _downloadChunksConcurrently(url, tasks, chunks, fileSize, onChunkDownloaded) {
         const semaphore = new Semaphore(this.maxConcurrent);
         
+        console.log(`并发下载文件块，最大并发数: ${this.maxConcurrent}`);
+        
         const downloadPromises = tasks.map(task => 
             semaphore.acquire().then(async () => {
                 try {
                     const chunk = await this._downloadChunk(url, task.start, task.end, this.maxRetries);
                     chunks[task.chunkIndex] = chunk;
                     onChunkDownloaded(chunk.size);
+                    console.log(`文件块 ${task.chunkIndex + 1}/${tasks.length} 下载完成`);
                 } finally {
                     semaphore.release();
                 }
@@ -93,9 +103,12 @@ class ChunkDownloader {
         );
         
         await Promise.all(downloadPromises);
+        console.log('所有文件块下载完成');
     }
 
     async _downloadChunk(url, start, end, retries) {
+        console.log(`开始下载文件块: ${start}-${end}`);
+        
         for (let i = 0; i <= retries; i++) {
             try {
                 const response = await fetch(url, {
@@ -108,9 +121,11 @@ class ChunkDownloader {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
                 
+                console.log(`文件块下载成功: ${start}-${end}, 大小: ${response.headers.get('content-length')} bytes`);
                 return await response.blob();
             } catch (error) {
                 if (i === retries) {
+                    console.error(`文件块下载失败: ${start}-${end}, 错误: ${error.message}`);
                     throw error;
                 }
                 
@@ -127,6 +142,8 @@ class ChunkDownloader {
         a.href = url;
         a.download = filename || 'download';
         
+        console.log(`开始保存文件: ${filename}, 大小: ${blob.size} bytes`);
+        
         // 触发下载
         document.body.appendChild(a);
         a.click();
@@ -135,6 +152,7 @@ class ChunkDownloader {
         setTimeout(() => {
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
+            console.log('文件保存完成，资源已清理');
         }, 100);
     }
 }
@@ -170,67 +188,70 @@ class Semaphore {
 
 // 页面加载完成后初始化分片下载功能
 document.addEventListener('DOMContentLoaded', function () {
-    // 获取分片下载按钮
-    const chunkedDownloadBtn = document.getElementById('chunked-download-btn');
-    
-    if (chunkedDownloadBtn) {
-        chunkedDownloadBtn.addEventListener('click', function () {
-            // 获取当前页面的URL
-            const url = window.location.href;
-            
-            // 从URL中提取文件哈希
-            const urlParams = new URLSearchParams(window.location.search);
-            const fileHash = urlParams.get('hash');
-            
-            if (!fileHash) {
-                console.error('无法获取文件哈希');
-                showMessage('无法获取文件信息', 'error');
-                return;
-            }
-            
-            // 先获取文件信息
-            fetch(`/api/file/${fileHash}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        // 创建分片下载器
-                        const chunkDownloader = new ChunkDownloader({
-                            chunkSize: 2 * 1024 * 1024, // 2MB chunks
-                            maxConcurrent: 3,
-                            maxRetries: 3,
-                            retryDelay: 1000,
-                            onProgress: function(progress) {
-                                // 更新下载进度
-                                console.log(`下载进度: ${Math.round(progress.progress)}%`);
-                            },
-                            onSuccess: function(result) {
-                                // 下载成功
-                                console.log('下载完成:', result);
-                                showMessage('Download completed successfully!', 'success');
-                            },
-                            onError: function(error) {
-                                // 下载失败
-                                console.error('下载失败:', error);
-                                showMessage('Download failed: ' + error.message, 'error');
-                            }
-                        });
+    // 为所有下载链接添加异步下载功能（与admin和myfiles页面保持一致）
+    const downloadLinks = document.querySelectorAll('a[href*="/file?hash="]');
+    downloadLinks.forEach(link => {
+        // 检查链接是否已经有点击事件监听器
+        if (!link.hasAttribute('data-chunk-download-initialized')) {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                const url = this.href;
+                const fileHash = new URL(url).searchParams.get('hash');
+                
+                if (!fileHash) return;
+                
+                console.log(`开始获取文件信息，文件哈希: ${fileHash}`);
+                
+                // 先获取文件信息
+                fetch(`/api/file/${fileHash}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            // 使用分片下载器下载文件
+                            const chunkDownloader = new ChunkDownloader({
+                                chunkSize: 2 * 1024 * 1024, // 2MB chunks
+                                maxConcurrent: 3,
+                                maxRetries: 3,
+                                retryDelay: 1000,
+                                onProgress: function(progress) {
+                                    // 更新下载进度
+                                    console.log(`下载进度: ${Math.round(progress.progress)}%`);
+                                },
+                                onSuccess: function(result) {
+                                    // 下载成功
+                                    console.log('下载完成:', result);
+                                    showMessage('Download completed successfully!', 'success');
+                                },
+                                onError: function(error) {
+                                    // 下载失败
+                                    console.error('下载失败:', error);
+                                    showMessage('Download failed: ' + error.message, 'error');
+                                }
+                            });
 
-                        // 使用原始文件名
-                        const filename = data.file_name || fileHash || 'download';
+                            // 使用原始文件名
+                            const filename = data.file_name || fileHash || 'download';
+                            
+                            console.log(`开始分片下载文件: ${filename}`);
 
-                        // 开始分片下载
-                        chunkDownloader.downloadFile(url, filename);
-                    } else {
-                        console.error('获取文件信息失败:', data.message);
-                        showMessage('Failed to get file info: ' + data.message, 'error');
-                    }
-                })
-                .catch(error => {
-                    console.error('获取文件信息失败:', error);
-                    showMessage('Failed to get file info', 'error');
-                });
-        });
-    }
+                            // 开始分片下载
+                            chunkDownloader.downloadFile(url, filename);
+                        } else {
+                            console.error('获取文件信息失败:', data.message);
+                            showMessage('Failed to get file info: ' + data.message, 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('获取文件信息失败:', error);
+                        showMessage('Failed to get file info', 'error');
+                    });
+            });
+            
+            // 标记该链接已经初始化
+            link.setAttribute('data-chunk-download-initialized', 'true');
+        }
+    });
     
     // 显示消息函数
     function showMessage(message, type) {
