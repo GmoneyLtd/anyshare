@@ -563,7 +563,9 @@ h2 {
     position: relative;
     display: flex;
     border-bottom: 1px solid #eee;
-    width: 100%;
+    /* width: 100%; */
+    gap: 1px;
+    /* max-width: fit-content; */
 }
 
 /* 使用绝对定位显示确认按钮，避免影响布局 */
@@ -657,6 +659,7 @@ h2 {
 .user-card-actions {
     display: flex;
     gap: 8px;
+    max-width: fit-content;
 }
 
 .user-card-actions .btn-icon {
@@ -857,6 +860,7 @@ h2 {
     justify-content: flex-start;
     padding-top: 8px;
     border-top: 1px solid #f0f0f0;
+    max-width: fit-content;
 }
 
 .file-card-actions .btn-icon {
@@ -1068,6 +1072,7 @@ h2 {
     gap: 10px;
     border-bottom: 1px solid #eee;
     width: 100%;
+    max-width: fit-content;
 }
 
 /* 操作按钮样式 */
