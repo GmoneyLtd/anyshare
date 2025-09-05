@@ -22,7 +22,7 @@ class ChunkDownloader {
             
             const fileInfo = await headResponse.json();
             const fileSize = fileInfo.file_size;
-            const filename = fileInfo.file_name;
+            const actualFilename = fileInfo.file_name; // 修复变量名冲突
             
             if (!fileSize) {
                 throw new Error('无法获取文件大小');
@@ -58,13 +58,13 @@ class ChunkDownloader {
             // 合并文件块
             console.log('开始合并文件块');
             const blob = new Blob(chunks);
-            this._saveFile(blob, filename);
+            this._saveFile(blob, actualFilename || filename); // 使用实际文件名或传入的文件名
             
             console.log('文件下载完成并保存');
             
             this.onSuccess({
                 url: url,
-                filename: filename,
+                filename: actualFilename || filename, // 使用实际文件名或传入的文件名
                 size: fileSize
             });
         } catch (error) {
