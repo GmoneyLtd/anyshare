@@ -225,7 +225,7 @@ document.addEventListener('DOMContentLoaded', function () {
             
             // 复制到剪贴板
             navigator.clipboard.writeText(shareLink).then(() => {
-                showMessage('分享链接已复制到剪贴板', 'success');
+                showMessage('Share link copied to clipboard', 'success');
             }).catch(err => {
                 console.error('复制失败:', err);
                 showMessage('复制失败，请手动复制链接', 'error');
@@ -237,7 +237,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 textArea.select();
                 try {
                     document.execCommand('copy');
-                    showMessage('分享链接已复制到剪贴板', 'success');
+                    showMessage('Share link copied to clipboard', 'success');
                 } catch (err) {
                     console.error('手动复制也失败了:', err);
                 }
