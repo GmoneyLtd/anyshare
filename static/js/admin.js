@@ -196,7 +196,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         // 关闭模态框
                         closeExpiryModal();
 
-                        // 查找并更新对应行的过期时间单元格
+                        // 查找并更新对应行的过期时间单元格（表格布局）
                         const rows = document.querySelectorAll('.files-table tbody tr');
                         for (let i = 0; i < rows.length; i++) {
                             const row = rows[i];
@@ -235,6 +235,52 @@ document.addEventListener('DOMContentLoaded', function () {
                                             newTimeElement.textContent = `(${localTimeStr})`;
                                         } catch (e) {
                                             console.error('时间转换错误:', e);
+                                        }
+                                    }
+                                }
+                                break;
+                            }
+                        }
+
+                        // 查找并更新对应卡片的过期时间（移动端卡片布局）
+                        const cards = document.querySelectorAll('.file-card');
+                        for (let i = 0; i < cards.length; i++) {
+                            const card = cards[i];
+                            const hashElement = card.querySelector('.file-hash-value');
+                            // 检查hashElement的文本内容是否包含fileHash的前缀
+                            if (hashElement && hashElement.textContent.includes(fileHash.substring(0, 8))) {
+                                const timeInfoElement = card.querySelector('.time-info');
+                                if (timeInfoElement) {
+                                    // 更新页面显示
+                                    timeInfoElement.innerHTML = `
+                                        <div class="time-relative">${data.expiry_relative}</div>
+                                        <div class="time-absolute" data-utc-time="${data.expiry_date}">
+                                            (${data.expiry_formatted})
+                                        </div>
+                                    `;
+
+                                    // 重新应用时区转换
+                                    const newTimeElement = timeInfoElement.querySelector('[data-utc-time]');
+                                    if (newTimeElement) {
+                                        const utcTimeStr = newTimeElement.getAttribute('data-utc-time');
+                                        if (utcTimeStr) {
+                                            try {
+                                                const utcDate = new Date(utcTimeStr);
+                                                const options = {
+                                                    month: 'short',
+                                                    day: 'numeric',
+                                                    hour: '2-digit',
+                                                    minute: '2-digit',
+                                                    second: '2-digit',
+                                                    year: 'numeric',
+                                                    hour12: false
+                                                };
+                                                const dateParts = utcDate.toLocaleString('en-US', options).split(', ');
+                                                const localTimeStr = `${dateParts[0]} ${dateParts[1]} ${dateParts[2]}`;
+                                                newTimeElement.textContent = `(${localTimeStr})`;
+                                            } catch (e) {
+                                                console.error('时间转换错误:', e);
+                                            }
                                         }
                                     }
                                 }
