@@ -226,6 +226,17 @@ document.addEventListener('DOMContentLoaded', function () {
                 // 保存原始按钮文本
                 const originalText = openBtn.innerHTML;
                        
+                        // 设置初始进度为0%
+                        const secondSpan = openBtn.querySelector('span:last-child');
+                        if (secondSpan) {
+                            // 保存原始文本内容
+                            if (!openBtn.dataset.originalText) {
+                                openBtn.dataset.originalText = secondSpan.textContent;
+                            }
+                            // 设置初始进度为0%
+                            secondSpan.textContent = '0%';
+                        }
+                       
                         // 先获取文件信息
                         fetch(`/api/file/${fileHash}`)
                             .then(response => response.json())
