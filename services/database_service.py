@@ -13,7 +13,7 @@ _local = threading.local()
 
 
 def get_conn() -> sqlite3.Connection:
-    """返回当前线程复用的数据库连接，首次调用时启用 WAL 模式。"""
+    """返回当前线程复用的数据库连接, 首次调用时启用 WAL 模式。"""
     if not hasattr(_local, "conn"):
         _local.conn = sqlite3.connect(DB_NAME, detect_types=sqlite3.PARSE_DECLTYPES)
         _local.conn.row_factory = sqlite3.Row
@@ -191,12 +191,13 @@ def add_file(
     return password
 
 
-def get_user_files(username: str) -> list:
+def get_user_files(username: str, user_info: dict | None = None) -> list:
     """
     获取指定用户上传的所有文件
 
     参数:
     username (str): 用户名
+    user_info (dict, optional): 用户信息, 如果已获取可传入避免重复查询
 
     返回:
     list: 包含用户文件信息的字典列表
@@ -205,7 +206,8 @@ def get_user_files(username: str) -> list:
     cursor = conn.cursor()
 
     # 检查用户是否为管理员
-    user_info = get_user(username)
+    if user_info is None:
+        user_info = get_user(username)
     if user_info and user_info["is_admin"] == 1:
         # 管理员可以看到所有文件
         cursor.execute("SELECT * FROM files ORDER BY upload_date DESC")

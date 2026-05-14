@@ -596,8 +596,8 @@ def admin_page() -> str:
         app_logger.warning(f"Non-admin user {username} attempted to access admin page from IP: {upload_ip}")
         return template("views/error.html", message="You do not have permission to access this page")
 
-    # 获取所有文件
-    files = get_user_files(username)
+    # 获取所有文件 (传入已获取的 user_info 避免重复查询)
+    files = get_user_files(username, user_info=user_info)
     app_logger.info(
         f"Admin page requested, total files: {len(files)}, Client-IP: {request.headers.get('x-forwarded-for', request.remote_addr)}"
     )
