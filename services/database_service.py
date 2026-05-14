@@ -153,7 +153,7 @@ def add_file(
     tuple: 文件密码。
     """
     # 连接到SQLite数据库, DB_NAME为数据库文件的路径
-    conn = sqlite3.connect(DB_NAME, detect_types=sqlite3.PARSE_DECLTYPES)
+    conn = get_conn()
     cursor = conn.cursor()
 
     # 获取当前的UTC时间作为上传日期
@@ -180,8 +180,6 @@ def add_file(
 
     # 提交数据库事务
     conn.commit()
-    # 关闭数据库连接
-    conn.close()
 
     # 返回文件密码
     return password
@@ -197,8 +195,7 @@ def get_user_files(username: str) -> list:
     返回:
     list: 包含用户文件信息的字典列表
     """
-    conn = sqlite3.connect(DB_NAME, detect_types=sqlite3.PARSE_DECLTYPES)
-    conn.row_factory = sqlite3.Row
+    conn = get_conn()
     cursor = conn.cursor()
 
     # 检查用户是否为管理员
@@ -211,7 +208,6 @@ def get_user_files(username: str) -> list:
         cursor.execute("SELECT * FROM files WHERE username = ? ORDER BY upload_date DESC", (username,))
 
     files = cursor.fetchall()
-    conn.close()
 
     # 将文件信息转换为字典列表, 并处理datetime对象
     files_list = []
@@ -237,16 +233,12 @@ def get_file(file_hash: str) -> dict | None:
     dict: 包含文件信息的字典, 如果找不到则返回None。
     """
     # 连接到SQLite数据库, 检测类型
-    conn = sqlite3.connect(DB_NAME, detect_types=sqlite3.PARSE_DECLTYPES)
-    conn.row_factory = sqlite3.Row
+    conn = get_conn()
     cursor = conn.cursor()
 
     # 执行查询语句, 查找匹配的文件哈希值
     cursor.execute("SELECT * FROM files WHERE file_hash = ?", (file_hash,))
     file = cursor.fetchone()
-
-    # 关闭数据库连接
-    conn.close()
 
     # 如果找到了匹配的文件
     if file:
@@ -274,8 +266,7 @@ def delete_expired_files() -> None:
     """
     删除过期文件(过期超过30天)
     """
-    # 连接到数据库, 启用类型检测以解析声明类型
-    conn = sqlite3.connect(DB_NAME, detect_types=sqlite3.PARSE_DECLTYPES)
+    conn = get_conn()
     cursor = conn.cursor()
 
     # 计算30天前的时间
@@ -298,7 +289,6 @@ def delete_expired_files() -> None:
         cursor.execute("DELETE FROM files WHERE file_hash = ?", (file_hash,))
 
     conn.commit()
-    conn.close()
 
     # 记录日志
     if len(expired_files) > 0:
@@ -317,16 +307,14 @@ def delete_file_from_db(file_hash: str) -> None:
     返回:
     无
     """
-    # 连接数据库, 确保类型检测
-    conn = sqlite3.connect(DB_NAME, detect_types=sqlite3.PARSE_DECLTYPES)
+    conn = get_conn()
     cursor = conn.cursor()
 
     # 执行删除操作, 使用参数化查询以防止SQL注入
     cursor.execute("DELETE FROM files WHERE file_hash = ?", (file_hash,))
 
-    # 提交更改并关闭数据库连接
+    # 提交更改
     conn.commit()
-    conn.close()
 
 
 def add_user(username: str, password: str, is_admin: int = 0) -> bool | None:
@@ -342,13 +330,12 @@ def add_user(username: str, password: str, is_admin: int = 0) -> bool | None:
     bool: 添加成功返回True, 失败返回False
     """
     try:
-        conn = sqlite3.connect(DB_NAME, detect_types=sqlite3.PARSE_DECLTYPES)
+        conn = get_conn()
         cursor = conn.cursor()
 
         # 检查用户名是否已存在
         cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
         if cursor.fetchone():
-            conn.close()
             return False
 
         # 添加新用户
@@ -358,7 +345,6 @@ def add_user(username: str, password: str, is_admin: int = 0) -> bool | None:
         )
 
         conn.commit()
-        conn.close()
         return True
     except Exception:
         return False
@@ -375,8 +361,7 @@ def get_user(username: str, password: str | None = None) -> dict | None:
     返回:
     dict: 用户信息字典, 如果用户不存在或密码错误则返回None
     """
-    conn = sqlite3.connect(DB_NAME, detect_types=sqlite3.PARSE_DECLTYPES)
-    conn.row_factory = sqlite3.Row
+    conn = get_conn()
     cursor = conn.cursor()
 
     if password:
@@ -388,7 +373,6 @@ def get_user(username: str, password: str | None = None) -> dict | None:
         cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
 
     user = cursor.fetchone()
-    conn.close()
 
     if user:
         return dict(user)
@@ -402,14 +386,11 @@ def get_all_users() -> list:
     返回:
     list: 包含所有用户信息的字典列表
     """
-    conn = sqlite3.connect(DB_NAME, detect_types=sqlite3.PARSE_DECLTYPES)
-    conn.row_factory = sqlite3.Row
+    conn = get_conn()
     cursor = conn.cursor()
 
     cursor.execute("SELECT * FROM users ORDER BY id")
     users = cursor.fetchall()
-
-    conn.close()
 
     # 将用户信息转换为字典列表, 并处理datetime对象
     users_list = []
@@ -433,7 +414,7 @@ def delete_user(username: str) -> bool | None:
     bool: 删除成功返回True, 失败返回False
     """
     try:
-        conn = sqlite3.connect(DB_NAME, detect_types=sqlite3.PARSE_DECLTYPES)
+        conn = get_conn()
         cursor = conn.cursor()
 
         # 检查是否是管理员账户
@@ -442,14 +423,12 @@ def delete_user(username: str) -> bool | None:
 
         # 如果是管理员账户, 不允许删除
         if result and result[0] == 1:
-            conn.close()
             return False
 
         # 删除用户
         cursor.execute("DELETE FROM users WHERE username = ?", (username,))
 
         conn.commit()
-        conn.close()
         return True
     except Exception as e:
         print(f"删除用户失败: {str(e)}")
@@ -468,7 +447,7 @@ def update_file_expiry(file_hash: str, new_expiry_date: datetime) -> bool | None
     bool: 更新成功返回True, 失败返回False
     """
     try:
-        conn = sqlite3.connect(DB_NAME, detect_types=sqlite3.PARSE_DECLTYPES)
+        conn = get_conn()
         cursor = conn.cursor()
 
         cursor.execute(
@@ -477,7 +456,6 @@ def update_file_expiry(file_hash: str, new_expiry_date: datetime) -> bool | None
         )
 
         conn.commit()
-        conn.close()
         return True
     except Exception as e:
         print(f"更新文件过期时间失败: {str(e)}")
@@ -496,14 +474,13 @@ def update_user_password(username: str, new_password: str) -> bool | None:
     bool: 更新成功返回True, 失败返回False
     """
     try:
-        conn = sqlite3.connect(DB_NAME, detect_types=sqlite3.PARSE_DECLTYPES)
+        conn = get_conn()
         cursor = conn.cursor()
         cursor.execute(
             "UPDATE users SET password = ? WHERE username = ?",
             (new_password, username),
         )
         conn.commit()
-        conn.close()
         return True
     except Exception as e:
         print(f"更新用户密码失败: {str(e)}")
@@ -519,14 +496,13 @@ def update_downloads(file_hash: str) -> bool | None:
     bool: 更新成功返回True, 失败返回False
     """
     try:
-        conn = sqlite3.connect(DB_NAME, detect_types=sqlite3.PARSE_DECLTYPES)
+        conn = get_conn()
         cursor = conn.cursor()
         cursor.execute(
             "UPDATE files SET downloads = downloads + 1 WHERE file_hash =?",
             (file_hash,),
         )
         conn.commit()
-        conn.close()
         return True
     except Exception:
         return False
@@ -558,12 +534,12 @@ def create_upload_session(
     bool: 创建成功返回True, 失败返回False
     """
     try:
-        conn = sqlite3.connect(DB_NAME, detect_types=sqlite3.PARSE_DECLTYPES)
+        conn = get_conn()
         cursor = conn.cursor()
 
         cursor.execute(
             """
-            INSERT INTO upload_sessions 
+            INSERT INTO upload_sessions
             (session_id, file_name, file_size, chunk_size, total_chunks, username, upload_ip, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
@@ -581,7 +557,6 @@ def create_upload_session(
         )
 
         conn.commit()
-        conn.close()
         return True
     except Exception:
         return False
@@ -597,13 +572,11 @@ def get_upload_session(session_id: str) -> dict | None:
     返回:
     dict: 会话信息字典, 如果不存在则返回None
     """
-    conn = sqlite3.connect(DB_NAME, detect_types=sqlite3.PARSE_DECLTYPES)
-    conn.row_factory = sqlite3.Row
+    conn = get_conn()
     cursor = conn.cursor()
 
     cursor.execute("SELECT * FROM upload_sessions WHERE session_id = ?", (session_id,))
     session = cursor.fetchone()
-    conn.close()
 
     if session:
         session_dict = dict(session)
@@ -635,7 +608,7 @@ def update_upload_session(
     bool: 更新成功返回True, 失败返回False
     """
     try:
-        conn = sqlite3.connect(DB_NAME, detect_types=sqlite3.PARSE_DECLTYPES)
+        conn = get_conn()
         cursor = conn.cursor()
 
         update_fields = ["updated_at = ?"]
@@ -658,7 +631,6 @@ def update_upload_session(
         cursor.execute(f"UPDATE upload_sessions SET {', '.join(update_fields)} WHERE session_id = ?", params)
 
         conn.commit()
-        conn.close()
         return True
     except Exception:
         return False
@@ -683,12 +655,12 @@ def add_upload_chunk(
     bool: 添加成功返回True, 失败返回False
     """
     try:
-        conn = sqlite3.connect(DB_NAME, detect_types=sqlite3.PARSE_DECLTYPES)
+        conn = get_conn()
         cursor = conn.cursor()
 
         cursor.execute(
             """
-            INSERT OR REPLACE INTO upload_chunks 
+            INSERT OR REPLACE INTO upload_chunks
             (session_id, chunk_index, chunk_hash, chunk_size, uploaded_at)
             VALUES (?, ?, ?, ?, ?)
         """,
@@ -696,7 +668,6 @@ def add_upload_chunk(
         )
 
         conn.commit()
-        conn.close()
         return True
     except Exception:
         return False
@@ -712,12 +683,11 @@ def get_uploaded_chunks(session_id: str) -> list:
     返回:
     list: 已上传分片索引列表
     """
-    conn = sqlite3.connect(DB_NAME, detect_types=sqlite3.PARSE_DECLTYPES)
+    conn = get_conn()
     cursor = conn.cursor()
 
     cursor.execute("SELECT chunk_index FROM upload_chunks WHERE session_id = ? ORDER BY chunk_index", (session_id,))
     chunks = cursor.fetchall()
-    conn.close()
 
     return [chunk[0] for chunk in chunks]
 
@@ -733,7 +703,7 @@ def delete_upload_session(session_id: str) -> bool | None:
     bool: 删除成功返回True, 失败返回False
     """
     try:
-        conn = sqlite3.connect(DB_NAME, detect_types=sqlite3.PARSE_DECLTYPES)
+        conn = get_conn()
         cursor = conn.cursor()
 
         # 删除分片记录
@@ -742,7 +712,6 @@ def delete_upload_session(session_id: str) -> bool | None:
         cursor.execute("DELETE FROM upload_sessions WHERE session_id = ?", (session_id,))
 
         conn.commit()
-        conn.close()
         return True
     except Exception:
         return False
@@ -753,7 +722,7 @@ def cleanup_expired_sessions() -> bool | None:
     清理过期的上传会话(超过24小时)
     """
     try:
-        conn = sqlite3.connect(DB_NAME, detect_types=sqlite3.PARSE_DECLTYPES)
+        conn = get_conn()
         cursor = conn.cursor()
 
         # 计算24小时前的时间
@@ -781,7 +750,6 @@ def cleanup_expired_sessions() -> bool | None:
                 shutil.rmtree(temp_dir)
 
         conn.commit()
-        conn.close()
 
         if len(expired_sessions) > 0:
             print(f"Cleaned up {len(expired_sessions)} expired upload sessions")
