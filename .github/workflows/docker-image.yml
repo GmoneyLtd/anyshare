@@ -1,0 +1,128 @@
+name: Build & Push MultiArch
+
+on:
+  push:
+    tags:
+      - '*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # ---------------------------------------------------------
+      # 1) Checkout
+      # ---------------------------------------------------------
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      # ---------------------------------------------------------
+      # 2) Setup QEMU
+      # ---------------------------------------------------------
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@v4
+
+      - name: Debug QEMU
+        run: |
+          echo "🔍 QEMU 已启用的架构："
+          docker run --rm tonistiigi/binfmt --version
+          docker run --rm tonistiigi/binfmt --help
+
+      # ---------------------------------------------------------
+      # 3) Setup Buildx
+      # ---------------------------------------------------------
+      - name: Setup Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Debug Buildx
+        run: |
+          echo "🔍 Buildx builder 信息："
+          docker buildx ls
+          echo "🔍 Buildx 当前 builder："
+          docker buildx inspect
+
+      # ---------------------------------------------------------
+      # 4) Owner lowercase
+      # ---------------------------------------------------------
+      # - name: Set owner lowercase
+      #   id: owner
+      #   run: |
+      #     echo "🔧 将 owner 转为小写：${GITHUB_REPOSITORY_OWNER,,}"
+      #     echo "lower=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_OUTPUT"
+
+      # ---------------------------------------------------------
+      # 5) Extract tag
+      # ---------------------------------------------------------
+      - name: Get pure tag
+        id: tag
+        run: |
+          echo "🔧 提取 tag：${GITHUB_REF#refs/tags/}"
+          echo "value=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+
+      # ---------------------------------------------------------
+      # 6) Login GHCR
+      # ---------------------------------------------------------
+      - name: Login GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Debug GHCR Login
+        run: echo "🔐 GHCR 登录成功：ghcr.io"
+
+      # ---------------------------------------------------------
+      # 7) Login ACR
+      # ---------------------------------------------------------
+      - name: Login Ali ACR
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ vars.ALI_REGISTRY_ADDR }}
+          username: ${{ secrets.ALI_REGISTRY_USER }}
+          password: ${{ secrets.ALI_REGISTRY_PWD }}
+
+      - name: Debug ACR Login
+        run: echo "🔐 ACR 登录成功：${{ vars.ALI_REGISTRY_ADDR }}"
+
+      # ---------------------------------------------------------
+      # 8) Build & Push MultiArch
+      # ---------------------------------------------------------
+      - name: Build & Push MultiArch
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64,linux/arm64
+
+          tags: |
+            ghcr.io/${{ vars.GHCR_OWNER }}/${{ github.event.repository.name }}:${{ steps.tag.outputs.value }}
+            ghcr.io/${{ vars.GHCR_OWNER }}/${{ github.event.repository.name }}:latest
+            ${{ vars.ALI_REGISTRY_ADDR }}/${{ vars.ALI_REGISTRY_NS }}/${{ github.event.repository.name }}:${{ steps.tag.outputs.value }}
+            ${{ vars.ALI_REGISTRY_ADDR }}/${{ vars.ALI_REGISTRY_NS }}/${{ github.event.repository.name }}:latest
+
+          # 🔥 关键：彻底关闭 attestation + provenance
+          provenance: false
+          # attests: |
+          #   type=provenance,mode=false
+          #   type=sbom,mode=false
+
+
+          cache-from: type=gha
+          cache-to: type=gha,mode=max,oci-mediatypes=true
+
+      # ---------------------------------------------------------
+      # 9) Debug manifest（关键：查看最终 manifest）
+      # ---------------------------------------------------------
+      - name: Debug Manifest
+        run: |
+          echo "🔍 查看 GHCR manifest："
+          docker buildx imagetools inspect ghcr.io/${{ vars.GHCR_OWNER }}/${{ github.event.repository.name }}:${{ steps.tag.outputs.value }}
+
+          echo "🔍 查看 ACR manifest："
+          docker buildx imagetools inspect ${{ vars.ALI_REGISTRY_ADDR }}/${{ vars.ALI_REGISTRY_NS }}/${{ github.event.repository.name }}:${{ steps.tag.outputs.value }}

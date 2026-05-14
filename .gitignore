@@ -221,5 +221,4 @@ tests/
 .vscode/
 .codebuddy/
 .kiro/
-.github/
 anyshare.db*
