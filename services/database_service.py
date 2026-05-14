@@ -2,11 +2,24 @@ from datetime import UTC, datetime, timedelta
 import os
 import random
 import sqlite3
+import threading
 
 from config import Config
 
 config = Config()
 DB_NAME = config.DB_NAME
+
+_local = threading.local()
+
+
+def get_conn() -> sqlite3.Connection:
+    """返回当前线程复用的数据库连接，首次调用时启用 WAL 模式。"""
+    if not hasattr(_local, "conn"):
+        _local.conn = sqlite3.connect(DB_NAME, detect_types=sqlite3.PARSE_DECLTYPES)
+        _local.conn.row_factory = sqlite3.Row
+        _local.conn.execute("PRAGMA journal_mode=WAL")
+    return _local.conn
+
 
 # 从环境变量读取管理员凭证
 ADMIN_USERNAME = config.ADMIN_USERNAME
