@@ -234,7 +234,11 @@ def complete_chunk_upload(
                 chunk_path = os.path.join(temp_dir, f"chunk_{chunk_index}")
                 if os.path.exists(chunk_path):
                     with open(chunk_path, "rb") as chunk_file:
-                        final_file.write(chunk_file.read())
+                        while True:
+                            data = chunk_file.read(8192)
+                            if not data:
+                                break
+                            final_file.write(data)
                 else:
                     # 清理已创建的文件
                     if os.path.exists(final_path):
