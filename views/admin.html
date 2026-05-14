@@ -22,22 +22,133 @@
                     <span aria-hidden="true" class="matsym">manage_accounts</span>
                     <span>Admin</span>
                 </a>
+                <a href="/logout" class="nav-link">
+                    <span aria-hidden="true" class="matsym">logout</span>
+                    <span>Logout</span>
+                </a>
             </div>
         </div>
     </header>
 
     <main>
         <div class="admin-container">
+            <!-- 系统配置管理 -->
+            <div class="admin-box">
+                <div class="admin-header">
+                    <h2>
+                        <span class="matsym big" aria-hidden="true">settings</span>
+                        <span>System Configuration</span>
+                    </h2>
+                </div>
+
+                <div class="config-form">
+                    <form id="config-form">
+                        <div class="form-group">
+                            <label>Anonymous Upload:</label>
+                            <div class="radio-group" style="display: flex; gap: 20px; align-items: center;">
+                                <label class="radio-option" style="display: flex; align-items: center; gap: 5px;">
+                                    <input type="radio" name="anonymous" value="true" id="anonymous-enabled"
+                                        {{ 'checked' if stats['anonymous_enabled']=='true' else '' }}>
+                                    <span class="radio-label">Enabled</span>
+                                </label>
+                                <label class="radio-option" style="display: flex; align-items: center; gap: 5px;">
+                                    <input type="radio" name="anonymous" value="false" id="anonymous-disabled"
+                                        {{ 'checked' if stats['anonymous_enabled']=='false' else '' }}>
+                                    <span class="radio-label">Disabled</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="file_limit_size">File Size Limit (MiB):</label>
+                            <input type="number" id="file_limit_size" name="file_limit_size"
+                                value="{{stats['file_limit_size']}}" step="0.1" min="0.1">
+                        </div>
+
+                        <button type="submit" class="btn btn-upload">Save Configuration</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 用户管理 -->
+            <div class="admin-box">
+                <div class="admin-header">
+                    <h2>
+                        <span class="matsym big" aria-hidden="true">group</span>
+                        <span>User Management</span>
+                    </h2>
+                </div>
+
+                <!-- 添加用户表单 -->
+                <div class="user-form">
+                    <h3>Add New User</h3>
+                    <form action="/users/add" method="post" class="add-user-form">
+                        <div class="form-group">
+                            <label for="username">Username:</label>
+                            <input type="text" id="username" name="username" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="password">Password:</label>
+                            <input type="password" id="password" name="password" required>
+                        </div>
+
+                        <button type="submit" class="btn btn-upload">Add User</button>
+                    </form>
+                </div>
+
+                <div class="users-table-container">
+                    <h3>User List</h3>
+                    <table class="files-table users-table">
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Role</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-table-body" class="user-list-body">
+                            <!-- 用户列表将通过JavaScript动态加载 -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 小屏幕用户卡片布局 -->
+                <div class="users-cards-container">
+                    <h3>User List</h3>
+                    <div id="users-cards-body">
+                        <!-- 用户卡片将通过JavaScript动态加载 -->
+                    </div>
+                </div>
+
+                <!-- 密码修改模态框 -->
+                <div id="password-modal" class="modal" style="display: none;">
+                    <div class="modal-content">
+                        <h3>Change Password for <span id="modal-username"></span></h3>
+                        <form id="modal-password-form">
+                            <div class="form-group">
+                                <label for="modal-new-password">New Password:</label>
+                                <input type="password" id="modal-new-password" name="new_password" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="modal-confirm-password">Confirm Password:</label>
+                                <input type="password" id="modal-confirm-password" name="confirm_password" required>
+                            </div>
+                            <div class="modal-actions">
+                                <button type="submit" class="btn btn-upload">Change Password</button>
+                                <button type="button" class="btn btn-cancel" id="cancel-password-change">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
             <div class="admin-box">
                 <div class="admin-header">
                     <h2>
                         <span class="matsym big" aria-hidden="true">query_stats</span>
                         <span>Admin Statistics</span>
                     </h2>
-                    <a href="/logout" class="nav-link">
-                        <span>Logout</span>
-                        <span aria-hidden="true" class="matsym">logout</span>
-                    </a>
                 </div>
 
                 <div class="stats-container">
@@ -57,7 +168,8 @@
                         </div>
                         <div class="stat-info">
                             <h3>Storage Use</h3>
-                            <div class="stat-value">{{stats['storage_used']}} <span class="stat-unit">/ {{stats['storage_limit']}}</span></div>
+                            <div class="stat-value">{{stats['storage_used']}} <span class="stat-unit">/
+                                    {{stats['storage_limit']}}</span></div>
                         </div>
                     </div>
                 </div>
@@ -74,26 +186,31 @@
                         <thead>
                             <tr>
                                 <th>File Name & Hash</th>
+                                <th>Owner</th>
                                 <th>Size</th>
                                 <th>Upload IP</th>
                                 <th>Uploaded</th>
                                 <th>Expires in</th>
+                                <th>Downloads</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
                             % for file in files:
                             <tr>
-                                <td class="file-info">
-                                    <div class="file-name">{{file['file_name']}}</div>
+                                <td>
+                                    <div class="file-name-container">
+                                        <div class="file-name">{{file['file_name']}}</div>
+                                    </div>
                                     <div class="file-hash-value">({{file['file_hash']}})</div>
                                 </td>
+                                <td>{{file['username']}}</td>
                                 <td>{{file['size_formatted']}}</td>
                                 <td>{{file.get('upload_ip', 'unknow')}}</td>
                                 <td>
                                     <div class="time-info">
                                         <div class="time-relative">{{file['upload_relative']}}</div>
-                                        <div class="time-absolute" data-utc-time="{{file['upload_date'].isoformat()}}">
+                                        <div class="time-absolute" data-utc-time="{{file['upload_date']}}">
                                             ({{file['upload_formatted']}})
                                         </div>
                                     </div>
@@ -101,17 +218,30 @@
                                 <td>
                                     <div class="time-info">
                                         <div class="time-relative">{{file['expiry_relative']}}</div>
-                                        <div class="time-absolute" data-utc-time="{{file['expiry_date'].isoformat()}}">
+                                        <div class="time-absolute" data-utc-time="{{file['expiry_date']}}">
                                             ({{file['expiry_formatted']}})
                                         </div>
                                     </div>
                                 </td>
                                 <td>
-                                    <a href="/file?hash={{file['file_hash']}}&pwd={{file['password']}}" class="nav-link btn-icon" title="download">
+                                    <div class="file-downloads">{{file['downloads']}}</div>
+                                </td>
+                                <td>
+                                    <a href="/file?hash={{file['file_hash']}}&pwd={{file['password']}}"
+                                        class="nav-link btn-icon" title="download">
                                         <span aria-label="Downloads" class="matsym">download</span>
                                     </a>
-                                    <button class="nav-link btn-icon delete-btn" data-hash="{{file['file_hash']}}" title="delete">
+                                    <button class="nav-link btn-icon delete-btn" data-hash="{{file['file_hash']}}"
+                                        title="delete">
                                         <span aria-label="Delete Button" class="matsym">delete</span>
+                                    </button>
+                                    <button class="nav-link btn-icon extend-btn" data-hash="{{file['file_hash']}}"
+                                        title="extend expiry">
+                                        <span aria-hidden="true" class="matsym">auto_delete</span>
+                                    </button>
+                                    <button class="nav-link btn-icon copy-btn" data-hash="{{file['file_hash']}}" data-pwd="{{file['password']}}"
+                                        title="copy share link">
+                                        <span aria-hidden="true" class="matsym">content_copy</span>
                                     </button>
                                 </td>
                             </tr>
@@ -119,11 +249,118 @@
                         </tbody>
                     </table>
                 </div>
+
+                <!-- 小屏幕卡片布局 -->
+                <div class="files-cards-container">
+                    % for file in files:
+                    <div class="file-card">
+                        <div class="file-card-header">
+                            <div class="file-name-container">
+                                <div class="file-name">{{file['file_name']}}</div>
+                            </div>
+                            <div class="file-hash-value">#{{file['file_hash'][:8]}}...</div>
+                        </div>
+
+                        <div class="file-card-info">
+                            <div class="info-item">
+                                <span class="matsym">person</span>
+                                <span>{{file['username']}}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="matsym">schedule</span>
+                                <div class="time-info">
+                                    <div class="time-relative">{{file['expiry_relative']}}</div>
+                                    <div class="time-absolute" data-utc-time="{{file['expiry_date']}}">
+                                        ({{file['expiry_formatted']}})
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="file-card-actions">
+                            <a href="/file?hash={{file['file_hash']}}&pwd={{file['password']}}"
+                                class="nav-link btn-icon" title="download">
+                                <span class="matsym">download</span>
+                            </a>
+                            <button class="nav-link btn-icon extend-btn" data-hash="{{file['file_hash']}}"
+                                title="extend expiry">
+                                <span class="matsym">auto_delete</span>
+                            </button>
+                            <button class="nav-link btn-icon delete-btn" data-hash="{{file['file_hash']}}"
+                                title="delete">
+                                <span class="matsym">delete</span>
+                            </button>
+                            <button class="nav-link btn-icon copy-btn" data-hash="{{file['file_hash']}}" data-pwd="{{file['password']}}"
+                                title="copy share link">
+                                <span class="matsym">content_copy</span>
+                            </button>
+                        </div>
+                    </div>
+                    % end
+                </div>
+
+                <!-- 过期时间调整模态框 -->
+                <div id="expiry-modal" class="modal" style="display: none;">
+                    <div class="modal-content">
+                        <h3>Adjust Expiry Time <span id="modal-filename"></span></h3>
+                        <form id="modal-expiry-form">
+                            <input type="hidden" id="modal-file-hash" name="file_hash">
+                            <div class="form-group">
+                                <label for="modal-expiry-select">New Expiry Time:</label>
+                                <select id="modal-expiry-select" name="expiry" class="expiry-select"
+                                    style="width: 100%">
+                                    <option value="1 hour">1 小时</option>
+                                    <option value="1 day">1 天</option>
+                                    <option value="1 week">1 周</option>
+                                    <option value="1 month">1 个月</option>
+                                    <option value="forever">永久</option>
+                                </select>
+                            </div>
+                            <div class="modal-actions">
+                                <button type="submit" class="btn btn-upload">Update Expiry</button>
+                                <button type="button" class="btn btn-cancel" id="cancel-expiry-change">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
         </div>
     </main>
 
     <script src="/static/js/admin.js"></script>
+    <script src="/static/js/chunk-download.js"></script>
+    <!-- <script>
+        // 密码修改表单提交处理
+        document.addEventListener('DOMContentLoaded', function () {
+            const passwordForm = document.getElementById('password-form');
+            if (passwordForm) {
+                passwordForm.addEventListener('submit', function (e) {
+                    e.preventDefault();
+
+                    const formData = new FormData(this);
+
+                    fetch('/users/change_password', {
+                        method: 'POST',
+                        body: formData
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                alert('Password changed successfully');
+                                // 清空表单
+                                document.getElementById('password-form').reset();
+                            } else {
+                                alert('Failed to change password: ' + data.message);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('Failed to change password');
+                        });
+                });
+            }
+        });
+    </script> -->
 </body>
 
 </html>

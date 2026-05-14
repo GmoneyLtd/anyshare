@@ -1,25 +1,23 @@
 services:
   anyshare:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: apuer/anyshare:1.1
-    container_name: anyshare
+    image: registry.cn-hangzhou.aliyuncs.com/gmoneyltd/anyshare:latest
+    container_name: anyshare4play   
+    hostname: anyshare4play
     restart: unless-stopped
     ports:
-      - 80:80
+      - 8000:8000
     networks:
       - helloworld
     environment:
+      - TZ=Asia/Shanghai
       - ADMIN_USERNAME=admin
       - ADMIN_PASSWORD=123456
+      - LOG_LEVEL=DEBUG
       - ANONYMOUS=false
-      - FILE_LIMIT_SIZE=10.00
     volumes:
       - ./log:/app/log
       - ./upload:/app/upload
-      - /etc/localtime:/etc/localtime:ro
 networks:
   helloworld:
     external: true
-    name: play
+    name: home4play

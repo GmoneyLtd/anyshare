@@ -17,13 +17,14 @@ body {
 @font-face {
     font-family: 'Material Symbols Rounded';
     font-style: normal;
+    /* font-weight: 400; */
     font-display: block;
-    src: url(/static/font/MaterialSymbolsRounded-subset-fe4f124c.woff2) format("woff2")
+    src: url(/static/font/material-symbols-outlined-latin-300-normal.woff2) format("woff2");
 }
 
 @font-face {
     font-family: 'CeraRoundProBold';
-    src: url('/static/font/Cera\ Round\ Pro\ Bold.woff2') format('woff2');
+    src: url('/static/font/CeraRoundPro-Bold.woff2') format('woff2');
 }
 
 .matsym {
@@ -36,16 +37,21 @@ body {
     max-width: 24px;
     max-height: 24px;
     overflow: hidden;
-    display: block;
+    display: inline-block;
     line-height: 1;
     text-transform: none;
     letter-spacing: normal;
     word-wrap: normal;
     white-space: nowrap;
     direction: ltr;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-font-feature-settings: 'liga';
+    -moz-font-feature-settings: 'liga';
+    font-feature-settings: 'liga';
     -moz-user-select: none;
     user-select: none;
-    -webkit-user-select: none
+    -webkit-user-select: none;
 }
 
 .matsym.big {
@@ -319,12 +325,13 @@ h2 {
 }
 
 .form-group {
-    margin-bottom: 15px;
+    margin: 10px 0px;
 }
 
 .form-group label {
     display: block;
-    margin-bottom: 5px;
+    /* font-size: 12px; */
+    margin: 5px;
     font-weight: 500;
 }
 
@@ -373,7 +380,7 @@ h2 {
 
 /* 管理员页面样式 */
 .admin-container {
-    max-width: 1000px;
+    max-width: 1200px;
     margin: 0 auto;
 }
 
@@ -438,6 +445,11 @@ h2 {
 
 .files-table-container {
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    /* 提升iOS滚动体验 */
+    margin: 0 -15px;
+    /* 负边距使表格可以全宽滚动 */
+    padding: 0 15px;
 }
 
 .files-table {
@@ -447,7 +459,7 @@ h2 {
 
 .files-table th,
 .files-table td {
-    padding: 12px 15px;
+    padding: 5px 6px;
     text-align: left;
     border-bottom: 1px solid #eee;
     font-size: 12px;
@@ -457,11 +469,6 @@ h2 {
     font-weight: 500;
     color: #555;
     background-color: #f9f9f9;
-}
-
-.file-info {
-    display: flex;
-    flex-direction: column;
 }
 
 .time-info {
@@ -474,7 +481,7 @@ h2 {
 }
 
 .time-absolute {
-    font-size: 12px;
+    font-size: 10px;
     color: #777;
 }
 
@@ -489,6 +496,8 @@ h2 {
     border: none;
     cursor: pointer;
     transition: all 0.2s;
+    margin-right: 5px;
+    /* 添加右边距 */
 }
 
 .btn-icon:hover {
@@ -499,17 +508,45 @@ h2 {
     background-color: #ffebee;
 }
 
+/* 最后一个按钮不需要右边距 */
+.btn-icon:last-child {
+    margin-right: 0;
+}
+
 .file-name {
     font-weight: 500;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 200px;
+    max-width: 120px;
     /* 控制最大宽度 */
+    position: relative;
+    cursor: pointer;
+}
+
+/* 悬停时显示完整文件名的样式 */
+.file-name.full-name-popup {
+    position: fixed;
+    /* 使用fixed定位使其跟随鼠标 */
+    background-color: #333;
+    color: white;
+    padding: 5px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    pointer-events: none;
+    max-width: none;
+    text-overflow: clip;
+    opacity: 0.9;
+    /* 半透明效果，更像浏览器默认提示框 */
+    transform: translateY(2px);
+    /* 微小偏移，使其看起来更紧贴鼠标 */
 }
 
 .file-hash-value {
-    font-size: 12px;
+    font-size: 10px;
     color: #777;
     font-variant-numeric: tabular-nums;
     /* 使数字等宽 */
@@ -520,17 +557,624 @@ h2 {
     vertical-align: middle;
 }
 
-.file-name:hover {
-    overflow: auto;
-    animation: scroll-text 5s linear infinite;
+/* 为操作按钮容器设置固定宽度，防止抖动 */
+.files-table td:last-child {
+    /* width: 120px; */
+    position: relative;
+    display: flex;
+    border-bottom: 1px solid #eee;
+    /* width: 100%; */
+    gap: 1px;
+    /* max-width: fit-content; */
 }
 
-@keyframes scroll-text {
-    0% {
-        text-indent: 0;
+/* 使用绝对定位显示确认按钮，避免影响布局 */
+.inline-confirm {
+    position: absolute;
+    top: 0;
+    left: 0;
+    /* width: 100%; */
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 5px;
+    background: white;
+    padding: 5px;
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+    white-space: nowrap;
+    border: 1px solid #ff3b30;
+}
+
+/* 确保按钮尺寸一致 */
+.btn-small {
+    padding: 4px 8px;
+    font-size: 12px;
+    min-width: 50px;
+    text-align: center;
+}
+
+.expiry-select {
+    padding: 4px;
+    font-size: 12px;
+    margin-right: 5px;
+}
+
+/* 确保操作按钮容器高度一致 */
+.files-table .btn-icon {
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 5px;
+}
+
+/* 用户卡片样式 */
+.users-cards-container {
+    display: none;
+    /* 默认隐藏，只在小屏幕显示 */
+}
+
+.user-card {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.user-card-info {
+    flex: 1;
+}
+
+.user-card-username {
+    font-weight: 500;
+    font-size: 16px;
+    margin-bottom: 4px;
+}
+
+.user-card-role {
+    font-size: 14px;
+    color: #666;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.user-card-role .matsym {
+    font-size: 16px;
+    min-width: 16px;
+    min-height: 16px;
+    max-width: 16px;
+    max-height: 16px;
+}
+
+.user-card-actions {
+    display: flex;
+    gap: 8px;
+    max-width: fit-content;
+}
+
+.user-card-actions .btn-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #f5f5f5;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: #333;
+}
+
+.user-card-actions .btn-icon:hover {
+    background-color: #e9e9e9;
+}
+
+.user-card-actions .delete-user-btn:hover {
+    background-color: #ffebee;
+}
+
+.user-card-actions .matsym {
+    font-size: 20px;
+    min-width: 20px;
+    min-height: 20px;
+    max-width: 20px;
+    max-height: 20px;
+}
+
+/* 响应式设计 - 移动端适配 */
+@media screen and (max-width: 768px) {
+    .container {
+        padding: 0 10px;
     }
 
-    100% {
-        text-indent: -100%;
+    .header-buttons {
+        gap: 10px;
+    }
+
+    .upload-container,
+    .success-container,
+    .admin-container {
+        margin-top: 20px;
+    }
+
+    .upload-box,
+    .link-box,
+    .admin-box {
+        padding: 20px;
+    }
+
+    .stats-container {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .option-buttons {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .option {
+        padding: 10px;
+    }
+
+    .link-actions {
+        flex-direction: column;
+    }
+
+    .file-name {
+        max-width: 100px;
+    }
+}
+
+/* 小屏幕手机适配 */
+@media screen and (max-width: 480px) {
+    header h1 {
+        font-size: 20px;
+    }
+
+    .nav-link span:not(.matsym) {
+        display: none;
+        /* 在极小屏幕上只显示图标 */
+    }
+
+    .file-select {
+        padding: 15px;
+    }
+
+    .drag-drop-text {
+        display: none;
+        /* 在移动设备上隐藏拖放提示，因为大多数移动设备不支持 */
+    }
+
+    .btn-select {
+        width: 100%;
+        /* 让按钮占满宽度，更容易点击 */
+    }
+
+    .file-name {
+        max-width: 100px;
+    }
+
+    h2 {
+        font-size: 18px;
+    }
+
+    .stat-value {
+        font-size: 20px;
+    }
+}
+
+/* 文件卡片样式 */
+.files-cards-container {
+    display: none;
+    /* 默认隐藏，只在小屏幕显示 */
+}
+
+.file-card {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid #eee;
+}
+
+.file-card-header {
+    margin-bottom: 12px;
+    border-bottom: 1px solid #f0f0f0;
+    padding-bottom: 8px;
+}
+
+.file-card-header .file-name {
+    font-weight: 500;
+    font-size: 16px;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    cursor: pointer;
+}
+
+.file-card-header .file-hash-value {
+    font-size: 12px;
+    color: #777;
+    font-variant-numeric: tabular-nums;
+}
+
+.file-card-info {
+    margin-bottom: 12px;
+}
+
+.file-card-info .info-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.file-card-info .info-item:last-child {
+    margin-bottom: 0;
+}
+
+.file-card-info .matsym {
+    font-size: 18px;
+    min-width: 18px;
+    min-height: 18px;
+    max-width: 18px;
+    max-height: 18px;
+    color: #666;
+}
+
+.file-card-info .time-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.file-card-info .time-relative {
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.file-card-info .time-absolute {
+    font-size: 12px;
+    color: #777;
+}
+
+.file-card-actions {
+    display: flex;
+    gap: 4px;
+    justify-content: flex-start;
+    padding-top: 8px;
+    border-top: 1px solid #f0f0f0;
+    /* max-width: fit-content; */
+}
+
+.file-card-actions .btn-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #f5f5f5;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: #333;
+}
+
+.file-card-actions .btn-icon:hover {
+    background-color: #e9e9e9;
+}
+
+.file-card-actions .delete-btn:hover {
+    background-color: #ffebee;
+}
+
+.file-card-actions .matsym {
+    font-size: 20px;
+    min-width: 20px;
+    min-height: 20px;
+    max-width: 20px;
+    max-height: 20px;
+}
+
+/* 表格响应式处理 */
+@media screen and (max-width: 768px) {
+
+    /* 隐藏表格，显示卡片 */
+    .files-table-container {
+        display: none;
+    }
+
+    .files-cards-container {
+        display: block;
+    }
+
+    /* 隐藏用户表格，显示用户卡片 */
+    .users-table-container {
+        display: none;
+    }
+
+    .users-cards-container {
+        display: block;
+    }
+
+    .files-table th,
+    .files-table td {
+        padding: 6px 8px;
+        font-size: 10px;
+    }
+
+    .time-absolute {
+        display: none;
+        /* 在移动端隐藏详细时间，只显示相对时间 */
+    }
+
+    .btn-icon {
+        width: 30px;
+        height: 30px;
+        margin-right: 4px;
+        /* 移动端适当减小间距 */
+    }
+
+    .matsym {
+        font-size: 20px;
+        min-width: 20px;
+        min-height: 20px;
+        max-width: 20px;
+        max-height: 20px;
+    }
+}
+
+/* 超小屏幕适配 */
+@media screen and (max-width: 360px) {
+
+    .files-table th:nth-child(3),
+    .files-table td:nth-child(3) {
+        display: none;
+        /* 隐藏上传IP列 */
+    }
+}
+
+@media (hover: none) and (pointer: coarse) {
+
+    /* 触摸设备优化 */
+    .btn,
+    .nav-link,
+    .option,
+    .btn-icon {
+        min-height: 44px;
+        /* 苹果推荐的最小触摸目标尺寸 */
+    }
+
+    .btn-icon {
+        min-width: 44px;
+    }
+
+    .option {
+        padding: 12px 8px;
+    }
+}
+
+/* 添加单选按钮样式 */
+.radio-group {
+    display: flex;
+    flex-direction: row;
+    gap: 15px;
+}
+
+.radio-option {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.radio-option input[type="radio"] {
+    margin-right: 5px;
+}
+
+.radio-label {
+    font-weight: normal;
+    font-size: 10.5px;
+}
+
+/* 模态框样式 */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    max-width: 500px;
+    width: 90%;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+
+/* 用户表格样式 */
+.users-table-container {
+    margin-bottom: 30px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.users-table-container h3 {
+    margin: 10px 0px;
+    font-size: 18px;
+    font-weight: 500;
+}
+
+/* 用户表格三列平均分配宽度 */
+.users-table {
+    table-layout: fixed;
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: white;
+}
+
+.users-table th,
+.users-table td {
+    width: 33.33%;
+    text-align: left;
+    padding: 5px 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.users-table th {
+    background-color: #f9f9f9;
+    font-weight: 500;
+    color: #555;
+}
+
+.user-list-body tr:hover {
+    background-color: #f5f5f5;
+}
+
+/* 用户操作按钮容器 */
+.users-table td:last-child {
+    display: flex;
+    justify-content: flex-start;
+    gap: 10px;
+    border-bottom: 1px solid #eee;
+    width: 100%;
+    max-width: fit-content;
+}
+
+/* 操作按钮样式 */
+.users-table .btn-icon {
+    background-color: #f0f0f0;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+}
+
+.users-table .btn-icon:hover {
+    background-color: #e0e0e0;
+}
+
+.users-table .delete-user-btn:hover {
+    background-color: #ffebee;
+}
+
+/* 隐藏不需要的样式 */
+.btn-change-password {
+    display: none;
+}
+
+/* 确保下拉框在确认菜单中有合适的样式 */
+.inline-confirm .expiry-select {
+    padding: 5px;
+    margin-right: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    min-width: 100px;
+}
+
+/* 下载进度条样式 */
+.download-progress {
+    display: inline-block;
+    min-width: 30px;
+    text-align: center;
+    font-weight: bold;
+    color: #007bff;
+    font-size: 10.5px;
+    padding: 2px 4px;
+}
+
+/* 专门用于进度显示的链接样式 */
+.download-progress-link {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 50% !important;
+    background-color: #f5f5f5 !important;
+    border: none !important;
+    cursor: not-allowed !important;
+    transition: all 0.2s !important;
+    text-decoration: none !important;
+    color: #333 !important;
+}
+
+.download-progress-link:hover {
+    background-color: #e9e9e9 !important;
+}
+
+/* 确保在小屏幕上进度显示正确 */
+@media (max-width: 768px) {
+    .file-card-actions a[href*="/file?hash="],
+    .files-table td a[href*="/file?hash="] {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        min-width: 36px;
+        min-height: 36px;
+    }
+    
+    .download-progress {
+        font-size: 10.5px;
+        min-width: 30px;
+    }
+    
+    /* 确保进度链接在移动端有足够大的触摸目标 */
+    .download-progress-link {
+        min-width: 44px !important;
+        min-height: 44px !important;
+        width: 44px !important;
+        height: 44px !important;
+    }
+}
+
+/* 超小屏幕适配 */
+@media (max-width: 360px) {
+    .download-progress-link {
+        min-width: 40px !important;
+        min-height: 40px !important;
+        width: 40px !important;
+        height: 40px !important;
     }
 }

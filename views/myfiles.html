@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>anyShare - My Files</title>
+    <link rel="icon" type="image/svg+xml" href="/static/image/anyshare.svg">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+    <header>
+        <div class="container">
+            <h1>anyShare</h1>
+            <div class="header-buttons">
+                <a href="/" class="nav-link">
+                    <span aria-hidden="true" class="matsym">upload_file</span>
+                    <span>Upload</span>
+                </a>
+                <a href="/myfiles" class="nav-link">
+                    <span aria-hidden="true" class="matsym">folder</span>
+                    <span>My Files</span>
+                </a>
+                <a href="/logout" class="nav-link">
+                    <span aria-hidden="true" class="matsym">logout</span>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="admin-container">
+            <div class="admin-box">
+                <div class="admin-header">
+                    <h2>
+                        <span class="matsym big" aria-hidden="true">folder</span>
+                        <span>My Files</span>
+                    </h2>
+                </div>
+
+                <div class="files-table-container">
+                    <table class="files-table">
+                        <thead>
+                            <tr>
+                                <th>File Name & Hash</th>
+                                <th>Size</th>
+                                <th>Upload IP</th>
+                                <th>Uploaded</th>
+                                <th>Expires in</th>
+                                <th>Downloads</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            % for file in files:
+                            <tr>
+                                <td>
+                                    <div class="file-name-container">
+                                        <div class="file-name">{{file['file_name']}}</div>
+                                    </div>
+                                    <div class="file-hash-value">({{file['file_hash']}})</div>
+                                </td>
+                                <td>{{file['size_formatted']}}</td>
+                                <td>{{file.get('upload_ip', 'unknown')}}</td>
+                                <td>
+                                    <div class="time-info">
+                                        <div class="time-relative">{{file['upload_relative']}}</div>
+                                        <div class="time-absolute" data-utc-time="{{file['upload_date']}}">
+                                            ({{file['upload_formatted']}})
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="time-info">
+                                        <div class="time-relative">{{file['expiry_relative']}}</div>
+                                        <div class="time-absolute" data-utc-time="{{file['expiry_date']}}">
+                                            ({{file['expiry_formatted']}})
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="file-downloads">{{file['downloads']}}</div>
+                                </td>
+                                <td>
+                                    <a href="/file?hash={{file['file_hash']}}&pwd={{file['password']}}"
+                                        class="nav-link btn-icon" title="download">
+                                        <span aria-label="Downloads" class="matsym">download</span>
+                                    </a>
+                                    <button class="nav-link btn-icon delete-btn" data-hash="{{file['file_hash']}}"
+                                        title="delete">
+                                        <span aria-label="Delete Button" class="matsym">delete</span>
+                                    </button>
+                                    <button class="nav-link btn-icon copy-btn" data-hash="{{file['file_hash']}}" data-pwd="{{file['password']}}"
+                                        title="copy share link">
+                                        <span aria-hidden="true" class="matsym">content_copy</span>
+                                    </button>
+                                </td>
+                            </tr>
+                            % end
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 小屏幕卡片布局 -->
+                <div class="files-cards-container">
+                    % for file in files:
+                    <div class="file-card">
+                        <div class="file-card-header">
+                            <div class="file-name-container">
+                                <div class="file-name">{{file['file_name']}}</div>
+                            </div>
+                            <div class="file-hash-value">#{{file['file_hash'][:8]}}...</div>
+                        </div>
+
+                        <div class="file-card-info">
+                            <div class="info-item">
+                                <span class="matsym">schedule</span>
+                                <div class="time-info">
+                                    <div class="time-relative">{{file['expiry_relative']}}</div>
+                                    <div class="time-absolute" data-utc-time="{{file['expiry_date']}}">
+                                        ({{file['expiry_formatted']}})
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="file-card-actions">
+                            <a href="/file?hash={{file['file_hash']}}&pwd={{file['password']}}"
+                                class="nav-link btn-icon" title="download">
+                                <span class="matsym">download</span>
+                            </a>
+                            <button class="nav-link btn-icon delete-btn" data-hash="{{file['file_hash']}}"
+                                title="delete">
+                                <span class="matsym">delete</span>
+                            </button>
+                            <button class="nav-link btn-icon copy-btn" data-hash="{{file['file_hash']}}" data-pwd="{{file['password']}}"
+                                title="copy share link">
+                                <span class="matsym">content_copy</span>
+                            </button>
+                        </div>
+                    </div>
+                    % end
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="/static/js/myfiles.js"></script>
+    <script src="/static/js/chunk-download.js"></script>
+</body>
+
+</html>
