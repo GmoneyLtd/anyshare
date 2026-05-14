@@ -122,6 +122,12 @@ def init_db() -> None:
             (ADMIN_USERNAME, ADMIN_PASSWORD, 1, datetime.now(tz=UTC)),
         )
 
+    # 创建性能优化索引
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_files_username ON files(username)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_files_expiry_date ON files(expiry_date)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_files_file_hash ON files(file_hash)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_upload_sessions_session_id ON upload_sessions(session_id)")
+
     # 提交事务并关闭数据库连接
     conn.commit()
     conn.close()
