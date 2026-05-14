@@ -6,7 +6,7 @@ from services.logger_service import get_logger
 app_logger = get_logger()
 
 
-def get_system_config(anonymous, file_limit_size, user_limit_size):
+def get_system_config(anonymous: str, file_limit_size: str, user_limit_size: str) -> dict:
     """
     获取系统配置
 
@@ -26,7 +26,12 @@ def get_system_config(anonymous, file_limit_size, user_limit_size):
     }
 
 
-def update_system_config(admin_user, anonymous=None, file_limit_size=None, client_ip=None):
+def update_system_config(
+    admin_user: dict,
+    anonymous: str | None = None,
+    file_limit_size: str | None = None,
+    client_ip: str | None = None,
+) -> dict:
     """
     更新系统配置
 
@@ -48,7 +53,7 @@ def update_system_config(admin_user, anonymous=None, file_limit_size=None, clien
     return {"status": "success", "message": "config updated"}
 
 
-def calculate_statistics(username):
+def calculate_statistics(username: str) -> dict:
     """
     计算文件统计信息
 
@@ -77,7 +82,7 @@ def calculate_statistics(username):
     }
 
 
-def format_size(size_bytes):
+def format_size(size_bytes: int) -> str:
     """
     格式化文件大小
 
@@ -97,7 +102,7 @@ def format_size(size_bytes):
         return f"{size_bytes / (1024 * 1024 * 1024):.2f} GiB"
 
 
-def get_relative_time(date):
+def get_relative_time(date: datetime) -> str:
     """
     获取相对时间描述
 

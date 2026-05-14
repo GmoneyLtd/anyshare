@@ -2,7 +2,7 @@ from config import Config
 from web.server import setup_app, start_cleanup_task, start_server
 
 
-def main():
+def main() -> None:
     # 加载配置
     config = Config()
 

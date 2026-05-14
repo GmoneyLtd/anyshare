@@ -1,7 +1,7 @@
+from datetime import UTC, datetime, timedelta
 import os
 import random
 import sqlite3
-from datetime import UTC, datetime, timedelta
 
 from config import Config
 
@@ -14,12 +14,12 @@ ADMIN_PASSWORD = config.ADMIN_PASSWORD
 
 
 # 注册自定义适配器, 将 datetime 对象转换为字符串
-def adapt_datetime(dt):
+def adapt_datetime(dt: datetime) -> str:
     return dt.isoformat()
 
 
 # 注册自定义转换器, 将数据库中的字符串转换为 datetime 对象
-def convert_datetime(s):
+def convert_datetime(s: bytes) -> datetime:
     return datetime.fromisoformat(s.decode("utf-8"))
 
 
@@ -28,7 +28,7 @@ sqlite3.register_adapter(datetime, adapt_datetime)
 sqlite3.register_converter("datetime", convert_datetime)
 
 
-def init_db():
+def init_db() -> None:
     """
     初始化数据库。
 
@@ -114,7 +114,15 @@ def init_db():
     conn.close()
 
 
-def add_file(file_name, file_hash, file_size, expiry_date, upload_ip, username, password=None):
+def add_file(
+    file_name: str,
+    file_hash: str,
+    file_size: int,
+    expiry_date: datetime,
+    upload_ip: str,
+    username: str,
+    password: str | None = None,
+) -> str:
     """
     将文件信息添加到数据库中。
 
@@ -166,7 +174,7 @@ def add_file(file_name, file_hash, file_size, expiry_date, upload_ip, username, 
     return password
 
 
-def get_user_files(username):
+def get_user_files(username: str) -> list:
     """
     获取指定用户上传的所有文件
 
@@ -205,7 +213,7 @@ def get_user_files(username):
     return files_list
 
 
-def get_file(file_hash):
+def get_file(file_hash: str) -> dict | None:
     """
     根据文件哈希值获取文件信息。
 
@@ -249,7 +257,7 @@ def get_file(file_hash):
     return None
 
 
-def delete_expired_files():
+def delete_expired_files() -> None:
     """
     删除过期文件(过期超过30天)
     """
@@ -284,7 +292,7 @@ def delete_expired_files():
         print(f"Cleaned up {len(expired_files)} expired files")
 
 
-def delete_file_from_db(file_hash):
+def delete_file_from_db(file_hash: str) -> None:
     """
     从数据库中删除指定文件记录。
 
@@ -308,7 +316,7 @@ def delete_file_from_db(file_hash):
     conn.close()
 
 
-def add_user(username, password, is_admin=0):
+def add_user(username: str, password: str, is_admin: int = 0) -> bool | None:
     """
     添加新用户到数据库
 
@@ -343,7 +351,7 @@ def add_user(username, password, is_admin=0):
         return False
 
 
-def get_user(username, password=None):
+def get_user(username: str, password: str | None = None) -> dict | None:
     """
     根据用户名和可选的密码获取用户信息
 
@@ -374,7 +382,7 @@ def get_user(username, password=None):
     return None
 
 
-def get_all_users():
+def get_all_users() -> list:
     """
     获取所有用户信息
 
@@ -401,7 +409,7 @@ def get_all_users():
     return users_list
 
 
-def delete_user(username):
+def delete_user(username: str) -> bool | None:
     """
     删除指定用户
 
@@ -435,7 +443,7 @@ def delete_user(username):
         return False
 
 
-def update_file_expiry(file_hash, new_expiry_date):
+def update_file_expiry(file_hash: str, new_expiry_date: datetime) -> bool | None:
     """
     更新文件的过期时间
 
@@ -463,7 +471,7 @@ def update_file_expiry(file_hash, new_expiry_date):
         return False
 
 
-def update_user_password(username, new_password):
+def update_user_password(username: str, new_password: str) -> bool | None:
     """
     更新用户密码
 
@@ -489,7 +497,7 @@ def update_user_password(username, new_password):
         return False
 
 
-def update_downloads(file_hash):
+def update_downloads(file_hash: str) -> bool | None:
     """
     更新文件的下载次数
     参数:
@@ -512,7 +520,15 @@ def update_downloads(file_hash):
 
 
 # 分片上传相关函数
-def create_upload_session(session_id, file_name, file_size, chunk_size, total_chunks, username, upload_ip):
+def create_upload_session(
+    session_id: str,
+    file_name: str,
+    file_size: int,
+    chunk_size: int,
+    total_chunks: int,
+    username: str,
+    upload_ip: str,
+) -> bool | None:
     """
     创建上传会话
 
@@ -558,7 +574,7 @@ def create_upload_session(session_id, file_name, file_size, chunk_size, total_ch
         return False
 
 
-def get_upload_session(session_id):
+def get_upload_session(session_id: str) -> dict | None:
     """
     获取上传会话信息
 
@@ -587,7 +603,12 @@ def get_upload_session(session_id):
     return None
 
 
-def update_upload_session(session_id, uploaded_chunks=None, file_hash=None, status=None):
+def update_upload_session(
+    session_id: str,
+    uploaded_chunks: str | None = None,
+    file_hash: str | None = None,
+    status: str | None = None,
+) -> bool | None:
     """
     更新上传会话
 
@@ -630,7 +651,12 @@ def update_upload_session(session_id, uploaded_chunks=None, file_hash=None, stat
         return False
 
 
-def add_upload_chunk(session_id, chunk_index, chunk_hash, chunk_size):
+def add_upload_chunk(
+    session_id: str,
+    chunk_index: int,
+    chunk_hash: str,
+    chunk_size: int,
+) -> bool | None:
     """
     添加上传分片记录
 
@@ -663,7 +689,7 @@ def add_upload_chunk(session_id, chunk_index, chunk_hash, chunk_size):
         return False
 
 
-def get_uploaded_chunks(session_id):
+def get_uploaded_chunks(session_id: str) -> list:
     """
     获取已上传的分片列表
 
@@ -683,7 +709,7 @@ def get_uploaded_chunks(session_id):
     return [chunk[0] for chunk in chunks]
 
 
-def delete_upload_session(session_id):
+def delete_upload_session(session_id: str) -> bool | None:
     """
     删除上传会话及相关分片记录
 
@@ -709,7 +735,7 @@ def delete_upload_session(session_id):
         return False
 
 
-def cleanup_expired_sessions():
+def cleanup_expired_sessions() -> bool | None:
     """
     清理过期的上传会话(超过24小时)
     """

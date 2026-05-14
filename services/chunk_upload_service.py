@@ -1,13 +1,11 @@
+from datetime import UTC, datetime, timedelta
 import hashlib
 import os
 import shutil
 import uuid
-from datetime import UTC, datetime, timedelta
 
 from services.database_service import (
     add_file as db_add_file,
-)
-from services.database_service import (
     add_upload_chunk,
     create_upload_session,
     delete_upload_session,
@@ -23,7 +21,13 @@ app_logger = get_logger()
 DEFAULT_CHUNK_SIZE = 2 * 1024 * 1024
 
 
-def create_chunk_upload_session(file_name, file_size, user_info, client_ip, chunk_size=None):
+def create_chunk_upload_session(
+    file_name: str,
+    file_size: int,
+    user_info: dict,
+    client_ip: str,
+    chunk_size: int | None = None,
+) -> dict:
     """
     创建分片上传会话
 
@@ -76,7 +80,13 @@ def create_chunk_upload_session(file_name, file_size, user_info, client_ip, chun
         return {"status": "error", "message": "Failed to create upload session"}
 
 
-def upload_chunk(session_id, chunk_index, chunk_data, user_info, client_ip):
+def upload_chunk(
+    session_id: str,
+    chunk_index: int,
+    chunk_data: bytes,
+    user_info: dict,
+    client_ip: str,
+) -> dict:
     """
     上传文件分片
 
@@ -161,7 +171,14 @@ def upload_chunk(session_id, chunk_index, chunk_data, user_info, client_ip):
         return {"status": "error", "message": f"Upload chunk failed: {str(e)}"}
 
 
-def complete_chunk_upload(session_id, user_info, client_ip, upload_folder, expiry_option=None, password=None):
+def complete_chunk_upload(
+    session_id: str,
+    user_info: dict,
+    client_ip: str,
+    upload_folder: str,
+    expiry_option: str | None = None,
+    password: str | None = None,
+) -> dict:
     """
     完成分片上传, 合并文件
 
@@ -284,7 +301,11 @@ def complete_chunk_upload(session_id, user_info, client_ip, upload_folder, expir
         return {"status": "error", "message": f"Complete upload failed: {str(e)}"}
 
 
-def get_chunk_upload_status(session_id, user_info, client_ip):
+def get_chunk_upload_status(
+    session_id: str,
+    user_info: dict,
+    client_ip: str,
+) -> dict:
     """
     获取分片上传状态
 
@@ -329,7 +350,11 @@ def get_chunk_upload_status(session_id, user_info, client_ip):
     }
 
 
-def cancel_chunk_upload(session_id, user_info, client_ip):
+def cancel_chunk_upload(
+    session_id: str,
+    user_info: dict,
+    client_ip: str,
+) -> dict:
     """
     取消分片上传
 

@@ -4,7 +4,7 @@ import sys
 from loguru import logger
 
 
-def setup_logger(log_folder: str, log_level: str = "INFO"):
+def setup_logger(log_folder: str, log_level: str = "INFO") -> None:
     """
     配置日志器
 
@@ -41,7 +41,7 @@ def setup_logger(log_folder: str, log_level: str = "INFO"):
     )
 
 
-def get_logger():
+def get_logger() -> type:
     """
     获取日志器实例
 

@@ -4,12 +4,13 @@ import time
 
 from waitress import serve
 
+from config import Config
 from services.database_service import delete_expired_files, init_db
 from services.logger_service import get_logger, setup_logger
 from web.routes import app
 
 
-def setup_app(config_obj):
+def setup_app(config_obj: Config) -> type:
     """配置应用"""
     # 创建上传文件夹
     if not os.path.exists(config_obj.UPLOAD_FOLDER):
@@ -25,10 +26,10 @@ def setup_app(config_obj):
     return app_logger
 
 
-def start_cleanup_task():
+def start_cleanup_task() -> None:
     """启动定时清理任务"""
 
-    def run_cleanup_task():
+    def run_cleanup_task() -> None:
         while True:
             delete_expired_files()
             time.sleep(24 * 60 * 60)  # 每天执行一次
@@ -37,7 +38,7 @@ def start_cleanup_task():
     cleanup_thread.start()
 
 
-def start_server(config_obj, app_logger):
+def start_server(config_obj: Config, app_logger: type) -> None:
     """启动Web服务器"""
     app_logger.info("Starting server...")
     # 启动服务器

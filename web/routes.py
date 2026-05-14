@@ -1,6 +1,6 @@
+from datetime import UTC, datetime
 import os
 import urllib.parse
-from datetime import UTC, datetime
 
 from bottle import Bottle, redirect, request, response, static_file, template
 
@@ -16,8 +16,8 @@ from services.database_service import (
     get_file,
     get_user,
     get_user_files,
+    update_downloads as db_update_downloads,
 )
-from services.database_service import update_downloads as db_update_downloads
 from services.file_service import delete_file, download_file, update_file_expiry, upload_file
 from services.logger_service import get_logger
 from services.system_service import (
@@ -29,15 +29,9 @@ from services.system_service import (
 )
 from services.user_service import (
     add_user as service_add_user,
-)
-from services.user_service import (
     authenticate_user,
     change_password,
-)
-from services.user_service import (
     delete_user as service_delete_user,
-)
-from services.user_service import (
     get_all_users as service_get_all_users,
 )
 
@@ -50,7 +44,7 @@ app_logger = get_logger()
 
 # HTTP错误处理路由 - 使用通配符处理所有4xx和5xx错误
 @app.error(400)
-def error_4xx(error):
+def error_4xx(error: object) -> str:
     """
     处理所有4xx客户端错误
 
@@ -81,7 +75,7 @@ def error_4xx(error):
 
 
 @app.error(500)
-def error_5xx(error):
+def error_5xx(error: object) -> str:
     """
     处理所有5xx服务器错误
 
@@ -109,7 +103,7 @@ def error_5xx(error):
 
 # 添加404错误处理(Bottle默认不处理404)
 @app.error(404)
-def error_404(error):
+def error_404(error: object) -> str:
     """
     处理404 Not Found错误
 
@@ -127,7 +121,7 @@ def error_404(error):
 
 # 静态文件路由
 @app.route("/static/<filepath:path>")
-def server_static(filepath):
+def server_static(filepath: str) -> str:
     """
     提供静态文件下载服务
 
@@ -146,7 +140,7 @@ def server_static(filepath):
 
 # 主页路由装饰器, 将根路径 "/" 关联到 index 函数
 @app.route("/")
-def index():
+def index() -> str:
     """
     主页处理函数。
 
@@ -182,7 +176,7 @@ def index():
 
 # 管理员登录页面
 @app.route("/login")
-def login_page():
+def login_page() -> str:
     """
     渲染并返回登录页面。
 
@@ -200,7 +194,7 @@ def login_page():
 
 # 处理管理员登录
 @app.route("/login", method="POST")
-def login():
+def login() -> str:
     """
     用户登录验证函数。
 
@@ -232,7 +226,7 @@ def login():
 
 # 处理文件上传, 并在服务端验证文件大小限制(防止用户前端修改css脚本实现文件大小限制解除), 并返回文件信息
 @app.route("/upload", method="POST")
-def upload():
+def upload() -> dict:
     """
     处理文件上传请求。
 
@@ -270,7 +264,7 @@ def upload():
 
 # 处理文件上传成功后的页面逻辑
 @app.route("/share", method="GET")
-def share_success():
+def share_success() -> str:
     """
     处理文件分享页面逻辑。
     允许任何人访问此页面, 无论是否登录。
@@ -345,7 +339,7 @@ def share_success():
 
 # 获取文件信息
 @app.route("/file")
-def get_file_info():
+def get_file_info() -> str:
     """
     根据文件哈希和密码获取文件信息。
     从请求查询中获取文件哈希和密码, 验证文件是否存在和有效, 以及密码是否正确。
@@ -413,7 +407,7 @@ def get_file_info():
                     db_update_downloads(file_hash)
 
                 # 读取指定范围的文件内容
-                def stream_range():
+                def stream_range() -> bytes:
                     try:
                         app_logger.info(
                             f"Starting chunk download, req_id: {request_id}, chunk: {chunk_number}, file_name: {file_name}, hash: {file_hash}, range: {start}-{end}, Client-IP: {client_ip}"
@@ -470,7 +464,7 @@ def get_file_info():
             db_update_downloads(file_hash)
 
             # 使用流式响应下载文件 (完整文件)
-            def stream():
+            def stream() -> bytes:
                 try:
                     app_logger.info(
                         f"Starting full file download, req_id: {request_id}, file_name: {file_name}, hash: {file_hash}, Client-IP: {client_ip}"
@@ -543,7 +537,7 @@ def get_file_info():
 
 # 处理密码提交
 @app.route("/verify", method="POST")
-def verify_password():
+def verify_password() -> str:
     """
     验证密码并重定向到对应的文件下载页面。
 
@@ -565,7 +559,7 @@ def verify_password():
 
 # 授权用户页面路由
 @app.route("/admin")
-def admin_page():
+def admin_page() -> str:
     """
     管理员页面路由。
     检查用户是否已登录且是管理员, 如果不是则重定向到登录页面。
@@ -634,7 +628,7 @@ def admin_page():
 
 # 获取管理统计数据
 @app.route("/admin/stats")
-def get_admin_stats_route():
+def get_admin_stats_route() -> dict:
     """
     获取授权用户的管理统计信息的路由处理函数。
     检查用户是否已登录, 然后计算和返回文件统计信息。
@@ -663,7 +657,7 @@ def get_admin_stats_route():
 
 # 获取所有用户列表
 @app.route("/admin/users")
-def get_all_users_list():
+def get_all_users_list() -> dict:
     """
     获取所有用户列表的路由处理函数。
     只有管理员可以访问此端点。
@@ -691,7 +685,7 @@ def get_all_users_list():
 
 # 登出路由
 @app.route("/logout")
-def logout():
+def logout() -> str:
     """
     用户登出功能。
 
@@ -711,7 +705,7 @@ def logout():
 
 # 定义删除文件的路由和方法
 @app.route("/delete/<file_hash>", method="POST")
-def delete_file_route(file_hash):
+def delete_file_route(file_hash: str) -> dict:
     """
     删除指定文件
 
@@ -741,7 +735,7 @@ def delete_file_route(file_hash):
 # 用户管理页面
 # 添加用户
 @app.route("/users/add", method="POST")
-def add_user_route():
+def add_user_route() -> str:
     """
     添加用户路由。
     检查用户是否已登录且是管理员, 然后处理添加用户的请求。
@@ -776,7 +770,7 @@ def add_user_route():
 
 # 删除用户
 @app.route("/users/delete", method="POST")
-def delete_user_route():
+def delete_user_route() -> dict:
     """
     删除用户路由。
     检查用户是否已登录且是管理员, 然后处理删除用户的请求。
@@ -798,7 +792,7 @@ def delete_user_route():
 
 # 更新文件过期时间
 @app.route("/update_expiry", method="POST")
-def update_expiry_route():
+def update_expiry_route() -> dict:
     """
     更新文件过期时间路由。
     检查用户是否已登录且是管理员, 然后处理更新文件过期时间的请求。
@@ -830,7 +824,7 @@ def update_expiry_route():
 
 # 修改用户密码
 @app.route("/users/change_password", method="POST")
-def change_password_route():
+def change_password_route() -> dict:
     """
     修改用户密码路由。
     管理员可以修改所有用户密码, 普通用户只能修改自己密码。
@@ -862,7 +856,7 @@ def change_password_route():
 
 # 更新系统配置
 @app.route("/admin/config", method="POST")
-def update_config_route():
+def update_config_route() -> dict:
     """
     更新系统配置路由。
     只有管理员可以访问。
@@ -898,7 +892,7 @@ def update_config_route():
 
 # 获取系统配置
 @app.route("/admin/config", method="GET")
-def get_config_route():
+def get_config_route() -> dict:
     """
     获取系统配置路由。
     只有管理员可以访问。
@@ -920,7 +914,7 @@ def get_config_route():
 
 # API接口: 获取文件上传大小限制
 @app.route("/api/config", method="GET")
-def api_get_config():
+def api_get_config() -> dict:
     """
     返回当前系统配置的文件上传大小限制。
 
@@ -932,7 +926,7 @@ def api_get_config():
 
 # 分片上传相关路由
 @app.route("/api/chunk/session", method="POST")
-def create_chunk_session():
+def create_chunk_session() -> dict:
     """
     创建分片上传会话
     """
@@ -973,7 +967,7 @@ def create_chunk_session():
 
 
 @app.route("/api/chunk/upload", method="POST")
-def upload_chunk_route():
+def upload_chunk_route() -> dict:
     """
     上传文件分片
     """
@@ -1008,7 +1002,7 @@ def upload_chunk_route():
 
 
 @app.route("/api/chunk/complete", method="POST")
-def complete_chunk_upload_route():
+def complete_chunk_upload_route() -> dict:
     """
     完成分片上传
     """
@@ -1036,7 +1030,7 @@ def complete_chunk_upload_route():
 
 
 @app.route("/api/chunk/status/<session_id>", method="GET")
-def get_chunk_status_route(session_id):
+def get_chunk_status_route(session_id: str) -> dict:
     """
     获取分片上传状态
     """
@@ -1056,7 +1050,7 @@ def get_chunk_status_route(session_id):
 
 
 @app.route("/api/chunk/cancel", method="POST")
-def cancel_chunk_upload_route():
+def cancel_chunk_upload_route() -> dict:
     """
     取消分片上传
     """
@@ -1082,7 +1076,7 @@ def cancel_chunk_upload_route():
 
 
 @app.route("/api/healthz", method="GET")
-def health_check_route():
+def health_check_route() -> dict:
     """
     执行健康检查。
 
@@ -1098,7 +1092,7 @@ def health_check_route():
 
 # 用户个人文件页面路由
 @app.route("/myfiles")
-def my_files_page():
+def my_files_page() -> str:
     """
     用户个人文件页面路由。
     检查用户是否已登录, 如果未登录则重定向到登录页面。
@@ -1145,7 +1139,7 @@ def my_files_page():
 
 # API接口: 获取文件信息
 @app.route("/api/file/<file_hash>", method="GET")
-def api_get_file_info(file_hash):
+def api_get_file_info(file_hash: str) -> dict:
     """
     根据文件哈希值获取文件信息。
 

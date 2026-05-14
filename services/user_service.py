@@ -1,15 +1,17 @@
-from services.database_service import add_user as db_add_user
-from services.database_service import delete_user as db_delete_user
-from services.database_service import get_all_users as db_get_all_users
-from services.database_service import get_user as db_get_user
-from services.database_service import get_user_files as db_get_user_files
-from services.database_service import update_user_password as db_update_user_password
+from services.database_service import (
+    add_user as db_add_user,
+    delete_user as db_delete_user,
+    get_all_users as db_get_all_users,
+    get_user as db_get_user,
+    get_user_files as db_get_user_files,
+    update_user_password as db_update_user_password,
+)
 from services.logger_service import get_logger
 
 app_logger = get_logger()
 
 
-def authenticate_user(username, password, client_ip):
+def authenticate_user(username: str, password: str, client_ip: str) -> dict:
     """
     用户认证
 
@@ -31,7 +33,7 @@ def authenticate_user(username, password, client_ip):
         return {"status": "error", "message": "用户名或密码错误"}
 
 
-def get_user_files(username):
+def get_user_files(username: str) -> list:
     """
     获取用户文件列表
 
@@ -44,7 +46,13 @@ def get_user_files(username):
     return db_get_user_files(username)
 
 
-def add_user(admin_user, new_username, password, is_admin, client_ip):
+def add_user(
+    admin_user: dict,
+    new_username: str,
+    password: str,
+    is_admin: int,
+    client_ip: str,
+) -> dict:
     """
     添加用户
 
@@ -74,7 +82,7 @@ def add_user(admin_user, new_username, password, is_admin, client_ip):
         return {"status": "error", "message": "Failed to add user"}
 
 
-def delete_user(admin_user, username_to_delete, client_ip):
+def delete_user(admin_user: dict, username_to_delete: str, client_ip: str) -> dict:
     """
     删除用户
 
@@ -112,7 +120,12 @@ def delete_user(admin_user, username_to_delete, client_ip):
         return {"status": "error", "message": "Failed to delete user"}
 
 
-def change_password(current_user, target_username, new_password, client_ip):
+def change_password(
+    current_user: dict,
+    target_username: str,
+    new_password: str,
+    client_ip: str,
+) -> dict:
     """
     修改密码
 
@@ -140,7 +153,7 @@ def change_password(current_user, target_username, new_password, client_ip):
         return {"status": "error", "message": "failed to update password"}
 
 
-def get_all_users(admin_user, client_ip):
+def get_all_users(admin_user: dict, client_ip: str) -> dict:
     """
     获取所有用户列表
 

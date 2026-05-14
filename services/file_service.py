@@ -1,19 +1,28 @@
+from datetime import UTC, datetime, timedelta
 import hashlib
 import os
-from datetime import UTC, datetime, timedelta
 
-from services.database_service import add_file as db_add_file
-from services.database_service import delete_expired_files as db_delete_expired_files
-from services.database_service import delete_file_from_db as db_delete_file
-from services.database_service import get_file as db_get_file
-from services.database_service import update_file_expiry as db_update_file_expiry
+from services.database_service import (
+    add_file as db_add_file,
+    delete_expired_files as db_delete_expired_files,
+    delete_file_from_db as db_delete_file,
+    get_file as db_get_file,
+    update_file_expiry as db_update_file_expiry,
+)
 from services.logger_service import get_logger
 from services.system_service import get_relative_time
 
 app_logger = get_logger()
 
 
-def upload_file(file_data, user_info, client_ip, file_limit_size, upload_folder, password=None):
+def upload_file(
+    file_data: bytes,
+    user_info: dict,
+    client_ip: str,
+    file_limit_size: str,
+    upload_folder: str,
+    password: str | None = None,
+) -> dict:
     """
     处理文件上传业务逻辑
 
@@ -92,7 +101,12 @@ def upload_file(file_data, user_info, client_ip, file_limit_size, upload_folder,
         return {"status": "error", "message": f"An error occurred: {str(e)}"}
 
 
-def download_file(file_hash, password, client_ip, upload_folder):
+def download_file(
+    file_hash: str,
+    password: str,
+    client_ip: str,
+    upload_folder: str,
+) -> dict:
     """
     处理文件下载业务逻辑
 
@@ -140,7 +154,7 @@ def download_file(file_hash, password, client_ip, upload_folder):
     return {"status": "password_required", "file_hash": file_hash}
 
 
-def delete_file(file_hash, user_info, client_ip):
+def delete_file(file_hash: str, user_info: dict, client_ip: str) -> dict:
     """
     处理文件删除业务逻辑
 
@@ -193,14 +207,19 @@ def delete_file(file_hash, user_info, client_ip):
         return {"status": "error", "message": "permission denied"}
 
 
-def cleanup_expired_files():
+def cleanup_expired_files() -> None:
     """
     清理过期文件
     """
     db_delete_expired_files()
 
 
-def update_file_expiry(file_hash, expiry_option, user_info, client_ip):
+def update_file_expiry(
+    file_hash: str,
+    expiry_option: str,
+    user_info: dict,
+    client_ip: str,
+) -> dict:
     """
     更新文件过期时间
 
