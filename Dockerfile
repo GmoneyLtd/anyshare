@@ -10,9 +10,8 @@ RUN uv sync --frozen --no-cache
 COPY . .
 
 # -------------- 运行阶段 --------------
-FROM python:3.13.7-alpine
-# 使用 apk 安装 curl
-RUN apk add --no-cache curl
+FROM python:3.13.13-alpine
+
 WORKDIR /app
 # 复制应用代码
 COPY --from=builder /app /app
@@ -31,8 +30,9 @@ ENV ANONYMOUS=false
 
 # 暴露应用端口
 EXPOSE 8000
-# 应用程序健康检查
-HEALTHCHECK --interval=60s --timeout=5s --start-period=20s  --retries=3 CMD [ "curl", "-f", "http://localhost:8000/api/healthz" ]
+# 使用 wget 进行健康检查（Alpine 默认自带）
+HEALTHCHECK --interval=60s --timeout=5s --start-period=20s --retries=3 \
+    CMD wget -q -O /dev/null http://localhost:8000//api/healthz || exit 1
 
 # 启动命令
 CMD ["python", "app.py"]

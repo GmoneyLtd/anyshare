@@ -1,9 +1,8 @@
 #!/bin/bash
 
 # anyshare 仓库同步脚本
-# 本脚本用于设置双仓库同步并将 multi-user 设为默认分支
 # 作者: GmoneyLtd Team
-# 版本: 2.3.6
+# 版本: 2.1.2
 # 功能: 配置Git双远程仓库推送，支持同时推送到多个代码托管平台
 
 echo "============= 🚀 开始 anyShare 仓库同步设置 ============="
@@ -52,16 +51,16 @@ echo ""
 # 第一步：创建并切换到 multi-user 分支
 # ============================================================================
 # 检查 multi-user 分支是否存在，如果存在则切换，如果不存在则创建
-echo "📋 设置 multi-user 分支..."
-if git show-ref --verify --quiet refs/heads/multi-user; then
-    # 分支已存在，直接切换
-    echo "📋 分支 multi-user 已存在，正在切换到该分支..."
-    git switch multi-user
-else
-    # 分支不存在，创建新分支
-    echo "📋 创建新分支 multi-user..."
-    git checkout -b multi-user
-fi
+# echo "📋 设置 multi-user 分支..."
+# if git show-ref --verify --quiet refs/heads/multi-user; then
+#     # 分支已存在，直接切换
+#     echo "📋 分支 multi-user 已存在，正在切换到该分支..."
+#     git switch multi-user
+# else
+#     # 分支不存在，创建新分支
+#     echo "📋 创建新分支 multi-user..."
+#     git checkout -b multi-user
+# fi
 
 # ============================================================================
 # 第二步：查看当前远程仓库配置
@@ -77,8 +76,8 @@ git remote -v
 # FIRST_REPO_URL: 主要仓库（GitHub 公共仓库）
 # SECOND_REPO_URL: 备份仓库（自建 Gitea 服务器）
 # 注意：根据实际情况修改这些 URL
-FIRST_REPO_URL="https://github.com/GmoneyLtd/anyshare.git"
-SECOND_REPO_URL="https://gitea.apuer.tech/GmoneyLtd/anyshare.git"
+FIRST_REPO_URL="https://github.com/GmoneyLtd/ssq.git"
+SECOND_REPO_URL="https://gitea.apuer.tech/GmoneyLtd/ssq.git"
 
 echo "📋 配置的仓库地址:"
 echo "   主仓库: $FIRST_REPO_URL"
@@ -382,11 +381,11 @@ fi
 # ============================================================================
 # 第七步：设置本地默认分支
 # ============================================================================
-# 将本地仓库的默认分支设置为 multi-user
+# 将本地仓库的默认分支设置为 main
 # 这意味着在克隆或初始化时将默认使用这个分支
-echo "📋 设置 multi-user 为本地默认分支..."
-git symbolic-ref HEAD refs/heads/multi-user
-echo "  ✅ 已将 multi-user 设置为本地默认分支"
+echo "📋 设置 main 为本地默认分支..."
+git symbolic-ref HEAD refs/heads/main
+echo "  ✅ 已将 main 设置为本地默认分支"
 
 # ============================================================================
 # 脚本执行完成，显示配置摘要和后续步骤
@@ -395,16 +394,16 @@ echo ""
 echo "✅ 仓库同步设置完成！"
 echo ""
 echo "📋 配置摘要:"
-echo "   - 默认分支: multi-user"
+echo "   - 默认分支: main"
 echo "   - 当前分支: $(git branch --show-current)"
 echo "   - 可用的远程仓库:"
 git remote -v
 echo ""
 echo "🔧 后续步骤:"
-echo "1. 在远程仓库平台上设置 multi-user 为默认分支:"
+echo "1. 在远程仓库平台上设置 main为默认分支:"
 echo "   - GitHub: 仓库设置 → 常规 → 默认分支"
 echo "   - GitLab/Gitea: 仓库设置 → 仓库 → 默认分支"
-echo "2. 更新任何 CI/CD 配置以使用 multi-user 分支"
+echo "2. 更新任何 CI/CD 配置以使用 main分支"
 echo "3. 通知团队成员关于分支变更"
 echo ""
 echo "💡 已配置的仓库:"
