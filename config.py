@@ -6,7 +6,7 @@ class Config:
     # 应用配置
     HOST = os.getenv("HOST", "0.0.0.0")
     PORT = int(os.getenv("PORT", 8000))
-    THREADS = int(os.getenv("THREADS", 4))
+    THREADS = int(os.getenv("THREADS", os.cpu_count() * 2 + 1 if os.cpu_count() else 4))
     LOG_LEVEL = os.getenv("LOG_LEVEL", "DEBUG")
 
     # 路径配置
