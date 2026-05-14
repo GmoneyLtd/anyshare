@@ -76,8 +76,8 @@ git remote -v
 # FIRST_REPO_URL: 主要仓库（GitHub 公共仓库）
 # SECOND_REPO_URL: 备份仓库（自建 Gitea 服务器）
 # 注意：根据实际情况修改这些 URL
-FIRST_REPO_URL="https://github.com/GmoneyLtd/ssq.git"
-SECOND_REPO_URL="https://gitea.apuer.tech/GmoneyLtd/ssq.git"
+FIRST_REPO_URL="https://github.com/GmoneyLtd/anyshare.git"
+SECOND_REPO_URL="https://gitea.apuer.tech/GmoneyLtd/anyshare.git"
 
 echo "📋 配置的仓库地址:"
 echo "   主仓库: $FIRST_REPO_URL"
