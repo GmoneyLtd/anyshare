@@ -126,7 +126,7 @@ def init_db() -> None:
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_files_username ON files(username)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_files_expiry_date ON files(expiry_date)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_files_file_hash ON files(file_hash)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_upload_sessions_session_id ON upload_sessions(session_id)")
+    # upload_sessions(session_id) 已有 UNIQUE 约束, SQLite 自动创建索引, 无需额外索引
 
     # 提交事务并关闭数据库连接
     conn.commit()
