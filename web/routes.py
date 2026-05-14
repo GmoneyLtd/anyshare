@@ -135,7 +135,25 @@ def server_static(filepath: str) -> str:
     - static_file对象, 根据给定的文件路径和根目录返回相应的静态文件
     """
     app_logger.debug(f"Static file requested: {filepath}")
-    return static_file(filepath, root="./static")
+
+    # 根据文件类型设置缓存头
+    _cache_ttl = {
+        ".css": "public, max-age=86400",
+        ".js": "public, max-age=86400",
+        ".woff2": "public, max-age=604800",
+        ".woff": "public, max-age=604800",
+        ".ttf": "public, max-age=604800",
+        ".png": "public, max-age=86400",
+        ".jpg": "public, max-age=86400",
+        ".jpeg": "public, max-age=86400",
+        ".svg": "public, max-age=86400",
+        ".ico": "public, max-age=86400",
+    }
+    _, suffix = os.path.splitext(filepath)
+    cache_header = _cache_ttl.get(suffix.lower(), "no-cache")
+    resp = static_file(filepath, root="./static")
+    resp.set_header("Cache-Control", cache_header)
+    return resp
 
 
 # 主页路由装饰器, 将根路径 "/" 关联到 index 函数
