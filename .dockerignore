@@ -40,4 +40,5 @@ docker-build.sh
 sync2repo.sh
 CONTRIBUTING.md
 docs/
+anyshare.db*
 
