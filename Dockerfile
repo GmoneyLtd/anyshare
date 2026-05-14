@@ -32,7 +32,7 @@ ENV ANONYMOUS=false
 EXPOSE 8000
 # 使用 wget 进行健康检查（Alpine 默认自带）
 HEALTHCHECK --interval=60s --timeout=5s --start-period=20s --retries=3 \
-    CMD wget -q -O /dev/null http://localhost:8000//api/healthz || exit 1
+    CMD wget -q -O /dev/null http://localhost:8000/api/healthz || exit 1
 
 # 启动命令
 CMD ["python", "app.py"]
